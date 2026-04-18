@@ -1,1308 +1,747 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VEGA TERMINAL — Investment Intelligence</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-deep: #07080a;
-      --bg-surface: #0d1117;
-      --bg-elevated: #141b24;
-      --bg-card: #1a2332;
-      --accent: #f5a623;
-      --accent-glow: rgba(245,166,35,0.3);
-      --accent-dim: rgba(245,166,35,0.08);
-      --accent-border: rgba(245,166,35,0.15);
-      --green: #00e676;
-      --green-dim: rgba(0,230,118,0.1);
-      --red: #ff3d57;
-      --red-dim: rgba(255,61,87,0.1);
-      --indigo: #818cf8;
-      --sky: #38bdf8;
-      --rose: #f87171;
-      --text-primary: #e2e8f0;
-      --text-secondary: #94a3b8;
-      --text-muted: #475569;
-      --border: rgba(245,166,35,0.08);
-      --border-hover: rgba(245,166,35,0.25);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg-deep);
-      color: var(--text-primary);
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
-      pointer-events: none;
-      z-index: 9000;
-    }
-
-    body::after {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 8999;
-      opacity: 0.5;
-    }
-
-    /* TICKER */
-    #ticker-wrap {
-      height: 38px;
-      flex-shrink: 0;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
-      overflow: hidden;
-    }
-    #ticker-wrap .tradingview-widget-container,
-    #ticker-wrap .tradingview-widget-container__widget { height: 38px !important; }
-
-    /* HEADER */
-    #header {
-      height: 50px;
-      flex-shrink: 0;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      gap: 14px;
-    }
-
-    .logo { display: flex; flex-direction: column; line-height: 1; }
-    .logo-name {
-      font-family: 'Syne', sans-serif;
-      font-size: 17px; font-weight: 800;
-      letter-spacing: -0.03em;
-      color: var(--accent);
-      text-shadow: 0 0 20px var(--accent-glow);
-    }
-    .logo-sub {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px; letter-spacing: 0.14em;
-      color: var(--text-muted); text-transform: uppercase;
-    }
-
-    .divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
-
-    .live-indicator { display: flex; align-items: center; gap: 6px; }
-    .pulse-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 8px var(--green);
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.8); opacity: 0.5; } }
-    .live-text { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--green); letter-spacing: 0.1em; }
-
-    .header-chip {
-      display: flex; align-items: center; gap: 6px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      padding: 4px 10px; border-radius: 2px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px; color: var(--text-secondary);
-    }
-
-    .spacer { flex: 1; }
-
-    #clock { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); letter-spacing: 0.05em; }
-    #date-display { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }
-
-    /* MAIN GRID */
-    #main-grid {
-      display: grid;
-      grid-template-columns: 255px 1fr 295px;
-      flex: 1;
-      min-height: 0;
-    }
-
-    .panel {
-      display: flex; flex-direction: column;
-      border-right: 1px solid var(--border);
-      overflow: hidden; min-height: 0;
-    }
-    .panel:last-child { border-right: none; }
-
-    .panel-hdr {
-      height: 34px; flex-shrink: 0;
-      display: flex; align-items: center; gap: 8px;
-      padding: 0 12px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
-    }
-    .panel-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 9.5px; font-weight: 700;
-      letter-spacing: 0.13em; text-transform: uppercase;
-      color: var(--accent);
-    }
-    .panel-meta { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); }
-
-    /* WATCHLIST */
-    .wl-search-wrap { padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .wl-search {
-      width: 100%; background: var(--bg-elevated);
-      border: 1px solid var(--border); color: var(--text-primary);
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
-      padding: 6px 10px; border-radius: 2px; outline: none;
-      transition: border-color 0.15s;
-    }
-    .wl-search:focus { border-color: var(--accent); }
-    .wl-search::placeholder { color: var(--text-muted); }
-
-    #wl-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-
-    .cat-label {
-      padding: 8px 12px 3px;
-      font-family: 'JetBrains Mono', monospace; font-size: 8.5px;
-      color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase;
-    }
-
-    .wl-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 12px; cursor: pointer;
-      border-left: 2px solid transparent;
-      border-bottom: 1px solid rgba(245,166,35,0.03);
-      transition: background 0.12s, border-left-color 0.12s;
-    }
-    .wl-item:hover { background: var(--accent-dim); border-left-color: rgba(245,166,35,0.4); }
-
-    .wl-ticker { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: var(--text-primary); min-width: 50px; }
-    .wl-name { flex: 1; font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .type-badge {
-      font-family: 'JetBrains Mono', monospace; font-size: 8px;
-      padding: 1px 5px; border-radius: 2px; letter-spacing: 0.05em; flex-shrink: 0;
-    }
-    .b-idx { background: rgba(129,140,248,0.12); color: var(--indigo); }
-    .b-stk { background: rgba(245,166,35,0.1); color: var(--accent); }
-    .b-cry { background: rgba(0,230,118,0.1); color: var(--green); }
-    .b-fx  { background: rgba(148,163,184,0.1); color: var(--text-secondary); }
-    .wl-delete { width: 16px; height: 16px; display: none; align-items: center; justify-content: center; color: var(--text-muted); border-radius: 2px; font-size: 14px; line-height: 1; }
-    .wl-item:hover .wl-delete { display: flex; }
-    .wl-delete:hover { color: var(--red); }
-
-    /* ══════════════════════════════════════════
-       INVESTMENT CALCULATOR PANEL
-    ══════════════════════════════════════════ */
-    #calc-panel { background: var(--bg-deep); }
-
-    .calc-input-section {
-      padding: 12px 14px 0;
-      flex-shrink: 0;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .amount-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .amount-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      color: var(--text-muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      flex-shrink: 0;
-    }
-
-    .amount-input-wrap {
-      display: flex;
-      align-items: center;
-      background: var(--bg-elevated);
-      border: 1px solid var(--accent-border);
-      border-radius: 2px;
-      padding: 0 10px;
-      gap: 4px;
-      flex: 1;
-      max-width: 200px;
-      transition: border-color 0.15s;
-    }
-    .amount-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
-
-    .amount-symbol {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px; font-weight: 600;
-      color: var(--accent);
-    }
-
-    #amount-input {
-      background: transparent; border: none; outline: none;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 16px; font-weight: 600;
-      color: var(--text-primary);
-      width: 130px; padding: 6px 0;
-    }
-
-    .horizon-chip {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px; color: var(--text-muted);
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 2px; padding: 3px 8px;
-    }
-
-    /* STRATEGY TABS */
-    .strategy-tabs {
-      display: flex;
-      gap: 2px;
-      padding-bottom: 0;
-    }
-
-    .strat-tab {
-      flex: 1;
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      padding: 6px 0 8px;
-      cursor: pointer;
-      font-family: 'Syne', sans-serif;
-      font-size: 9px; font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      transition: color 0.15s, border-bottom-color 0.15s;
-    }
-    .strat-tab:hover { color: var(--text-secondary); }
-    .strat-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    /* STRATEGY META BAR */
-    .strat-meta-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 14px;
-      background: var(--bg-elevated);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .strat-desc {
-      font-size: 10px;
-      color: var(--text-secondary);
-      flex: 1;
-    }
-
-    .meta-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      flex-shrink: 0;
-    }
-    .meta-pill.return { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
-    .meta-pill.risk-low { background: rgba(0,230,118,0.08); color: var(--green); border: 1px solid rgba(0,230,118,0.15); }
-    .meta-pill.risk-med { background: rgba(245,166,35,0.1); color: var(--accent); border: 1px solid var(--accent-border); }
-    .meta-pill.risk-high { background: rgba(255,61,87,0.1); color: var(--red); border: 1px solid rgba(255,61,87,0.2); }
-    .meta-pill.risk-vhigh { background: rgba(255,61,87,0.18); color: var(--red); border: 1px solid rgba(255,61,87,0.35); }
-
-    /* STOCK CARDS LIST */
-    #stocks-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
-
-    .stock-card {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 10px 12px;
-      cursor: default;
-      transition: border-color 0.15s, background 0.15s;
-      animation: cardIn 0.3s ease both;
-    }
-    .stock-card:hover { border-color: var(--accent-border); background: var(--bg-card); }
-
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .card-row1 {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 7px;
-    }
-
-    .ticker-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px; font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-dim);
-      border: 1px solid var(--accent-border);
-      border-radius: 2px;
-      padding: 2px 8px;
-      flex-shrink: 0;
-      letter-spacing: 0.04em;
-    }
-
-    .card-info { flex: 1; }
-
-    .card-company {
-      font-size: 12px; font-weight: 500;
-      color: var(--text-primary);
-      margin-bottom: 2px;
-    }
-
-    .card-sector {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px; color: var(--text-muted);
-      letter-spacing: 0.06em;
-    }
-
-    .card-amount-col {
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    .card-alloc-amount {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px; font-weight: 600;
-      color: var(--text-primary);
-      display: block;
-    }
-
-    .card-alloc-pct {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px; color: var(--text-muted);
-    }
-
-    /* CONFIDENCE BAR */
-    .confidence-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 7px;
-    }
-
-    .conf-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8.5px; color: var(--text-muted);
-      letter-spacing: 0.08em;
-      width: 72px; flex-shrink: 0;
-    }
-
-    .conf-bar-track {
-      flex: 1; height: 5px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .conf-bar-fill {
-      height: 100%;
-      border-radius: 3px;
-      width: 0%;
-      transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .conf-value {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px; font-weight: 600;
-      width: 32px; text-align: right; flex-shrink: 0;
-    }
-
-    /* confidence color bands */
-    .conf-90plus { background: linear-gradient(90deg, #00e676, #00c853); }
-    .conf-80plus { background: linear-gradient(90deg, #f5a623, #ffcc02); }
-    .conf-70plus { background: linear-gradient(90deg, #ff9800, #f5a623); }
-    .conf-below70 { background: linear-gradient(90deg, #ff3d57, #ff6b6b); }
-
-    .conf-90plus-text { color: var(--green); }
-    .conf-80plus-text { color: #ffcc02; }
-    .conf-70plus-text { color: #ff9800; }
-    .conf-below70-text { color: var(--red); }
-
-    /* REASON */
-    .card-reason {
-      font-size: 10.5px;
-      color: var(--text-secondary);
-      line-height: 1.55;
-      margin-bottom: 7px;
-      border-left: 2px solid var(--accent-border);
-      padding-left: 8px;
-    }
-
-    /* PROJECTED RETURN */
-    .card-proj-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .proj-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px; color: var(--text-muted);
-      letter-spacing: 0.06em;
-    }
-
-    .proj-values {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-    }
-
-    .proj-trend {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; font-weight: 600;
-      color: var(--green);
-    }
-
-    .proj-outcome {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    /* GLOBAL MARKETS */
-    #market-panel .widget-fill { flex: 1; min-height: 0; position: relative; }
-    .widget-fill .tradingview-widget-container,
-    .widget-fill .tradingview-widget-container__widget { width: 100% !important; height: 100% !important; }
-
-    /* BOTTOM */
-    #bottom {
-      height: 295px; flex-shrink: 0;
-      display: grid;
-      grid-template-columns: 1fr 370px;
-      border-top: 1px solid var(--border);
-    }
-
-    #screener-panel {
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-
-    /* ══════════════════════════════════════════
-       PORTFOLIO SUMMARY PANEL
-    ══════════════════════════════════════════ */
-    #portfolio-panel {
-      display: flex; flex-direction: column;
-      background: var(--bg-surface);
-      overflow: hidden;
-    }
-
-    .portfolio-body {
-      flex: 1; overflow-y: auto;
-      padding: 10px 12px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
-
-    /* DONUT CHART */
-    .donut-wrap {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 12px;
-    }
-
-    .donut-chart {
-      position: relative;
-      width: 88px; height: 88px;
-      flex-shrink: 0;
-    }
-
-    .donut-svg { width: 88px; height: 88px; transform: rotate(-90deg); }
-
-    .donut-center {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-    }
-
-    .donut-total {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-
-    .donut-sub {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px; color: var(--text-muted);
-      letter-spacing: 0.05em;
-    }
-
-    .donut-legend { flex: 1; }
-
-    .legend-item {
-      display: flex; align-items: center; gap: 6px;
-      margin-bottom: 5px;
-    }
-
-    .legend-dot { width: 7px; height: 7px; border-radius: 1px; flex-shrink: 0; }
-
-    .legend-ticker {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px; font-weight: 600;
-      color: var(--text-primary);
-      min-width: 38px;
-    }
-
-    .legend-bar-track {
-      flex: 1; height: 4px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 2px; overflow: hidden;
-    }
-
-    .legend-bar-fill { height: 100%; border-radius: 2px; transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
-
-    .legend-pct {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px; color: var(--text-muted);
-      min-width: 28px; text-align: right;
-    }
-
-    /* SUMMARY METRICS */
-    .sep { height: 1px; background: var(--border); margin: 10px 0; }
-
-    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-
-    .metric-box {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      padding: 8px 10px;
-    }
-
-    .metric-lbl {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px; color: var(--text-muted);
-      letter-spacing: 0.1em; text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .metric-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px; font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .metric-val.green { color: var(--green); }
-    .metric-val.accent { color: var(--accent); }
-
-    /* RISK METER */
-    .risk-meter {
-      margin-top: 10px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      padding: 8px 10px;
-    }
-
-    .risk-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 6px;
-    }
-
-    .risk-lbl {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px; color: var(--text-muted);
-      letter-spacing: 0.1em; text-transform: uppercase;
-    }
-
-    .risk-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px; font-weight: 600;
-    }
-
-    .risk-track {
-      height: 6px;
-      background: linear-gradient(90deg, #00e676 0%, #f5a623 50%, #ff3d57 100%);
-      border-radius: 3px;
-      position: relative;
-    }
-
-    .risk-needle {
-      position: absolute;
-      top: -3px;
-      width: 2px; height: 12px;
-      background: #fff;
-      border-radius: 1px;
-      transform: translateX(-50%);
-      transition: left 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-      box-shadow: 0 0 6px rgba(255,255,255,0.5);
-    }
-
-    /* SCROLLBARS */
-    ::-webkit-scrollbar { width: 3px; height: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(245,166,35,0.18); border-radius: 2px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(245,166,35,0.35); }
-
-    .icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VEGA — Investment Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#fafaf8; --white:#ffffff; --off:#f4f3ef;
+  --amber:#c9780c; --amber-r:#e8920f; --amber-dim:rgba(201,120,12,0.09);
+  --amber-bd:rgba(201,120,12,0.2); --amber-glow:0 0 0 3px rgba(201,120,12,0.13);
+  --ink:#1c1917; --slate:#57534e; --muted:#a8a29e;
+  --border:rgba(28,25,23,0.08); --border2:rgba(28,25,23,0.13);
+  --green:#15803d; --green-dim:rgba(21,128,61,0.09);
+  --red:#b91c1c; --red-dim:rgba(185,28,28,0.09);
+  --indigo:#4f46e5;
+  --sh-xs:0 1px 3px rgba(0,0,0,0.06);
+  --sh-sm:0 2px 8px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);
+  --sh-md:0 4px 16px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.05);
+  --sh-amber:0 4px 16px rgba(201,120,12,0.14);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column}
+
+/* TICKER */
+#tk{height:40px;flex-shrink:0;background:var(--white);border-bottom:1px solid var(--border);overflow:hidden}
+
+/* NAV */
+#nav{height:54px;flex-shrink:0;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:0;box-shadow:var(--sh-xs)}
+.logo{display:flex;flex-direction:column;margin-right:28px;line-height:1}
+.logo-n{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-0.04em;color:var(--amber)}
+.logo-s{font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+.ndiv{width:1px;height:22px;background:var(--border);margin:0 6px}
+.nbtn{height:54px;padding:0 15px;background:transparent;border:none;border-bottom:2.5px solid transparent;font-family:'Syne',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:7px;transition:color .15s,border-bottom-color .15s;margin-bottom:-1px}
+.nbtn:hover{color:var(--slate)}
+.nbtn.on{color:var(--amber);border-bottom-color:var(--amber)}
+.nsp{flex:1}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(21,128,61,.5);animation:pu 2s ease-in-out infinite}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.live-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--green);letter-spacing:.1em}
+.ntime{display:flex;flex-direction:column;align-items:flex-end;padding-left:16px;border-left:1px solid var(--border)}
+.nclock{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--ink)}
+.ndate{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* PAGES */
+.pg{display:none;flex:1;min-height:0;flex-direction:column}
+.pg.on{display:flex}
+
+/* ═══ DASHBOARD ═══ */
+.dash-grid{display:grid;grid-template-columns:248px 1fr 276px;flex:1;min-height:0}
+.dcol{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;background:var(--white)}
+.dcol:last-child{border-right:none}
+.chdr{height:38px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--white)}
+.ctitle{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--amber)}
+.cmeta{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* Watchlist */
+.wls{padding:10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.wli{width:100%;background:var(--off);border:1px solid var(--border);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:11px;padding:7px 10px;border-radius:5px;outline:none;transition:border-color .15s,box-shadow .15s}
+.wli:focus{border-color:var(--amber);box-shadow:var(--amber-glow)}
+.wli::placeholder{color:var(--muted)}
+#wll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.catlbl{padding:10px 14px 3px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.wlrow{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border-left:2.5px solid transparent;transition:background .1s,border-left-color .1s}
+.wlrow:hover{background:var(--amber-dim);border-left-color:rgba(201,120,12,.4)}
+.wlt{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ink);min-width:46px}
+.wln{flex:1;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wlb{font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:3px;flex-shrink:0}
+.bi{background:rgba(79,70,229,.1);color:var(--indigo)}
+.bs{background:var(--amber-dim);color:var(--amber)}
+.bc{background:var(--green-dim);color:var(--green)}
+.bf{background:rgba(28,25,23,.07);color:var(--slate)}
+.wld{display:none;font-size:14px;color:var(--muted);cursor:pointer;line-height:1}
+.wlrow:hover .wld{display:block}
+.wld:hover{color:var(--red)}
+
+/* Chart */
+#chartcol{background:var(--cream);border-right:1px solid var(--border)}
+#chartbox{flex:1;min-height:0}
+#chartbox iframe{width:100%;height:100%;border:none;display:block}
+.tfrow{display:flex;gap:2px;margin-left:auto}
+.tfb{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:3px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .1s}
+.tfb:hover{background:var(--off);color:var(--slate)}
+.tfb.on{color:var(--amber);border-color:var(--amber-bd);background:var(--amber-dim)}
+
+/* Bottom screener */
+.dbottom{height:210px;flex-shrink:0;border-top:1px solid var(--border);background:var(--white);display:flex;flex-direction:column}
+.dbhdr{height:36px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)}
+#scw{flex:1;min-height:0}
+.sel{background:var(--off);border:1px solid var(--border);color:var(--slate);font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;outline:none;cursor:pointer}
+
+/* ═══ CALCULATOR ═══ */
+#pg-calc{background:var(--cream);overflow-y:auto}
+.calc-wrap{display:grid;grid-template-columns:1fr 330px;min-height:100%}
+.calc-main{padding:28px 30px}
+.calc-aside{padding:24px 20px;background:var(--white);border-left:1px solid var(--border);position:sticky;top:0;height:calc(100vh - 94px);overflow-y:auto}
+
+.pg-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-bottom:4px}
+.pg-sub{font-size:13px;color:var(--slate);margin-bottom:24px}
+
+.acard{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px 22px;margin-bottom:20px;box-shadow:var(--sh-sm)}
+.alrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.albl{font-family:'Syne',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.atag{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-bd);border-radius:10px;padding:2px 10px}
+.ainrow{display:flex;align-items:center;gap:12px}
+.ainwrap{display:flex;align-items:center;gap:6px;background:var(--off);border:1.5px solid var(--border);border-radius:7px;padding:0 14px;transition:border-color .15s,box-shadow .15s}
+.ainwrap:focus-within{border-color:var(--amber);box-shadow:var(--amber-glow)}
+.asym{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--amber)}
+#ainput{background:transparent;border:none;outline:none;font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;color:var(--ink);width:160px;padding:10px 0}
+.qbtns{display:flex;gap:6px}
+.qb{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:var(--white);color:var(--slate);cursor:pointer;transition:all .1s}
+.qb:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-dim)}
+
+.slbl{font-family:'Syne',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px}
+.scard{background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .15s}
+.scard:hover{border-color:var(--amber-bd);box-shadow:var(--sh-sm)}
+.scard.on{border-color:var(--amber);background:var(--amber-dim);box-shadow:var(--sh-amber)}
+.scard-n{font-family:'Syne',sans-serif;font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.scard-r{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);margin-bottom:2px}
+.scard-rk{font-family:'JetBrains Mono',monospace;font-size:9px}
+
+.smeta{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--white);border:1px solid var(--border);border-radius:6px;margin-bottom:18px}
+.smeta-d{font-size:11px;color:var(--slate);flex:1}
+.pill{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:3px 10px;border-radius:10px;flex-shrink:0}
+.p-ret{background:var(--green-dim);color:var(--green);border:1px solid rgba(21,128,61,.2)}
+.p-lo{background:var(--green-dim);color:var(--green);border:1px solid rgba(21,128,61,.2)}
+.p-me{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-bd)}
+.p-hi{background:rgba(251,146,60,.1);color:#c2410c;border:1px solid rgba(194,65,12,.2)}
+.p-vh{background:var(--red-dim);color:var(--red);border:1px solid rgba(185,28,28,.2)}
+
+#slist{display:flex;flex-direction:column;gap:10px}
+.stkcard{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px 18px;box-shadow:var(--sh-sm);animation:ci .3s ease both;transition:box-shadow .15s,border-color .15s}
+.stkcard:hover{box-shadow:var(--sh-md);border-color:var(--amber-bd)}
+@keyframes ci{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sk1{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.skbadge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--white);background:var(--amber);border-radius:4px;padding:4px 10px;flex-shrink:0;letter-spacing:.04em}
+.skinfo{flex:1}
+.skname{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px}
+.sksec{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.skamt{text-align:right;flex-shrink:0}
+.skdol{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--ink);display:block}
+.skpct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.crow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.clbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted);letter-spacing:.08em;width:76px;flex-shrink:0}
+.ctrack{flex:1;height:6px;background:var(--off);border-radius:3px;overflow:hidden}
+.cfill{height:100%;border-radius:3px;width:0%;transition:width .9s cubic-bezier(.22,1,.36,1)}
+.cnum{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;width:36px;text-align:right;flex-shrink:0}
+.f-a{background:linear-gradient(90deg,#15803d,#22c55e)}.t-a{color:var(--green)}
+.f-b{background:linear-gradient(90deg,#d97706,#f59e0b)}.t-b{color:#d97706}
+.f-c{background:linear-gradient(90deg,#c2410c,#f97316)}.t-c{color:#c2410c}
+.f-d{background:linear-gradient(90deg,#b91c1c,#ef4444)}.t-d{color:var(--red)}
+.skreason{font-size:11px;color:var(--slate);line-height:1.6;margin-bottom:10px;padding:8px 10px;background:var(--off);border-radius:4px;border-left:3px solid var(--amber-bd)}
+.skproj{display:flex;align-items:center;justify-content:space-between}
+.skplbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted);letter-spacing:.06em}
+.skpv{display:flex;gap:14px;align-items:center}
+.sktrend{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--green)}
+.skout{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ink)}
+
+/* Aside */
+.aside-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:16px}
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.donut{position:relative;width:90px;height:90px;flex-shrink:0}
+.dsvg{width:90px;height:90px;transform:rotate(-90deg)}
+.dcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dtotal{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ink)}
+.dsub{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);letter-spacing:.06em}
+.dleg{flex:1}
+.drow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.ddot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dtick{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--ink);width:40px}
+.dtrack{flex:1;height:4px;background:var(--off);border-radius:2px;overflow:hidden}
+.dfill{height:100%;border-radius:2px}
+.dpct{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);width:30px;text-align:right}
+.sep{height:1px;background:var(--border);margin:12px 0}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.mbox{background:var(--off);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+.mlbl{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.mval{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--ink)}
+.mval.g{color:var(--green)}.mval.a{color:var(--amber)}
+.rbox{background:var(--off);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+.rhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.rlbl{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.rval{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.rtrack{height:8px;border-radius:4px;background:linear-gradient(90deg,#15803d 0%,#d97706 50%,#b91c1c 100%);position:relative}
+.rneedle{position:absolute;top:-3px;width:3px;height:14px;background:var(--ink);border-radius:2px;transform:translateX(-50%);transition:left .6s cubic-bezier(.22,1,.36,1);box-shadow:0 0 4px rgba(0,0,0,.25)}
+.disc{margin-top:14px;padding:9px 11px;background:rgba(79,70,229,.05);border:1px solid rgba(79,70,229,.12);border-radius:6px;font-size:9.5px;color:var(--muted);line-height:1.55}
+
+/* ═══ TRADERS ═══ */
+#pg-traders{background:var(--cream);overflow-y:auto}
+.tr-inner{max-width:1160px;margin:0 auto;padding:32px 28px 52px}
+.tr-hero{margin-bottom:28px}
+.tr-eye{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--amber);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.tr-eye::before{content:'';display:inline-block;width:24px;height:1.5px;background:var(--amber)}
+.tr-h1{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-bottom:6px}
+.tr-p{font-size:13px;color:var(--slate);max-width:500px;line-height:1.65}
+.tr-disc-hero{margin-top:10px;display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);background:rgba(79,70,229,.05);border:1px solid rgba(79,70,229,.12);border-radius:4px;padding:4px 10px}
+.tr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px;box-shadow:var(--sh-sm);transition:box-shadow .2s,border-color .2s,transform .2s;animation:ci .35s ease both}
+.tc:hover{box-shadow:var(--sh-md);border-color:var(--amber-bd);transform:translateY(-2px)}
+.tc-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.tc-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;flex-shrink:0}
+.tc-meta{flex:1}
+.tc-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:1px}
+.tc-handle{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+.tc-badge{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-bd)}
+.tc-spec{font-size:11.5px;color:var(--slate);margin-bottom:12px;line-height:1.5}
+.tc-stats{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:14px}
+.tc-stat{flex:1;padding:8px 6px;text-align:center;border-right:1px solid var(--border)}
+.tc-stat:last-child{border-right:none}
+.tc-sv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);display:block}
+.tc-sl{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);letter-spacing:.06em}
+.tc-pl{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.tc-picks{display:flex;flex-direction:column;gap:6px}
+.prow{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--off);border-radius:5px}
+.ptick{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ink);min-width:44px}
+.pname{font-size:10px;color:var(--slate);flex:1}
+.pact{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:600;padding:2px 8px;border-radius:10px}
+.bull{background:var(--green-dim);color:var(--green)}
+.bear{background:var(--red-dim);color:var(--red)}
+.watch{background:var(--amber-dim);color:var(--amber)}
+.tc-thesis{margin-top:11px;padding:8px 10px;background:var(--off);border-radius:4px;border-left:3px solid var(--amber-bd);font-size:10.5px;color:var(--slate);line-height:1.55;font-style:italic}
+.tc-foot{margin-top:11px;padding-top:11px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tc-upd{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted)}
+.tc-link{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--amber);text-decoration:none}
+.tc-link:hover{text-decoration:underline}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(28,25,23,.12);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:rgba(28,25,23,.22)}
+.icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
 </head>
 <body>
 
-  <!-- TICKER TAPE -->
-  <div id="ticker-wrap">
-    <div class="tradingview-widget-container" style="height:38px;">
-      <div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-      {
-        "symbols": [
-          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
-          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
-          {"proName": "FOREXCOM:DJI", "title": "Dow Jones"},
-          {"proName": "TVC:VIX", "title": "VIX"},
-          {"proName": "TVC:GOLD", "title": "Gold"},
-          {"proName": "BINANCE:BTCUSDT", "title": "Bitcoin"},
-          {"proName": "BINANCE:ETHUSDT", "title": "Ethereum"},
-          {"proName": "NASDAQ:AAPL", "title": "Apple"},
-          {"proName": "NASDAQ:NVDA", "title": "NVIDIA"},
-          {"proName": "NASDAQ:TSLA", "title": "Tesla"},
-          {"proName": "NASDAQ:META", "title": "Meta"},
-          {"proName": "NASDAQ:MSFT", "title": "Microsoft"},
-          {"proName": "BSE:SENSEX", "title": "SENSEX"}
-        ],
-        "showSymbolLogo": true,
-        "isTransparent": true,
-        "displayMode": "adaptive",
-        "colorTheme": "dark",
-        "locale": "en"
-      }
-      </script>
-    </div>
+<!-- TICKER TAPE -->
+<div id="tk">
+  <div class="tradingview-widget-container" style="height:40px">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {"symbols":[{"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},{"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},{"proName":"FOREXCOM:DJI","title":"Dow Jones"},{"proName":"TVC:VIX","title":"VIX"},{"proName":"TVC:GOLD","title":"Gold"},{"proName":"TVC:OIL","title":"Oil"},{"proName":"BINANCE:BTCUSDT","title":"Bitcoin"},{"proName":"BINANCE:ETHUSDT","title":"Ethereum"},{"proName":"NASDAQ:NVDA","title":"NVIDIA"},{"proName":"NASDAQ:AAPL","title":"Apple"},{"proName":"NASDAQ:MSFT","title":"Microsoft"},{"proName":"NASDAQ:META","title":"Meta"},{"proName":"NASDAQ:TSLA","title":"Tesla"},{"proName":"FX:EURUSD","title":"EUR/USD"},{"proName":"BSE:SENSEX","title":"SENSEX"}],"showSymbolLogo":true,"isTransparent":true,"displayMode":"adaptive","colorTheme":"light","locale":"en"}
+    </script>
   </div>
+</div>
 
-  <!-- HEADER -->
-  <div id="header">
-    <div class="logo">
-      <div class="logo-name">VEGA</div>
-      <div class="logo-sub">Investment Terminal</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="live-indicator">
-      <div class="pulse-dot"></div>
-      <span class="live-text">LIVE</span>
-    </div>
-
-    <div class="header-chip">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      Investment Calculator
-    </div>
-
-    <div class="spacer"></div>
-
-    <div class="header-chip" style="color:var(--green);border-color:rgba(0,230,118,0.2);background:var(--green-dim);">
-      <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-      AI ANALYSIS ACTIVE
-    </div>
-
-    <div class="divider"></div>
-
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-      <div id="clock">00:00:00</div>
-      <div id="date-display">Loading...</div>
-    </div>
+<!-- NAV -->
+<nav id="nav">
+  <div class="logo">
+    <div class="logo-n">VEGA</div>
+    <div class="logo-s">Investment Terminal</div>
   </div>
+  <div class="ndiv"></div>
+  <button class="nbtn on" onclick="showPage('dash',this)">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </button>
+  <button class="nbtn" onclick="showPage('calc',this)">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="12" y2="12"/><line x1="8" y1="17" x2="10" y2="17"/></svg>
+    Calculator
+  </button>
+  <button class="nbtn" onclick="showPage('traders',this)">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Top Traders
+  </button>
+  <div class="nsp"></div>
+  <div class="live-dot"></div>
+  <span class="live-lbl" style="margin-left:6px">LIVE</span>
+  <div class="ntime" style="margin-left:16px">
+    <div class="nclock" id="clock">00:00:00</div>
+    <div class="ndate" id="ddate">Loading…</div>
+  </div>
+</nav>
 
-  <!-- MAIN GRID -->
-  <div id="main-grid">
+<!-- PAGE: DASHBOARD -->
+<div id="pg-dash" class="pg on">
+  <div class="dash-grid">
 
-    <!-- LEFT: WATCHLIST -->
-    <div class="panel" id="watchlist-panel">
-      <div class="panel-hdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span class="panel-title">Watchlist</span>
-        <span class="panel-meta" id="wl-count" style="margin-left:auto;"></span>
+    <!-- Watchlist -->
+    <div class="dcol">
+      <div class="chdr">
+        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="ctitle">Watchlist</span>
+        <span class="cmeta" id="wlcnt" style="margin-left:auto"></span>
       </div>
-      <div class="wl-search-wrap">
-        <input class="wl-search" id="wl-input" type="text" placeholder="+ Add symbol (e.g. AAPL, BTC...)">
-      </div>
-      <div id="wl-list"></div>
+      <div class="wls"><input class="wli" id="wlinput" type="text" placeholder="+ Add symbol (e.g. AAPL, BTC…)"></div>
+      <div id="wll"></div>
     </div>
 
-    <!-- CENTER: INVESTMENT CALCULATOR -->
-    <div class="panel" id="calc-panel">
-      <div class="panel-hdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
-        <span class="panel-title">Investment Calculator</span>
-        <span class="panel-meta" style="margin-left:auto;" id="calc-meta">AI-Powered Stock Picks · 12-Month Horizon</span>
-      </div>
-
-      <div class="calc-input-section">
-        <div class="amount-row">
-          <span class="amount-label">INVEST</span>
-          <div class="amount-input-wrap">
-            <span class="amount-symbol">$</span>
-            <input id="amount-input" type="number" value="1000" min="100" max="1000000" step="100">
-          </div>
-          <div class="horizon-chip">12-MONTH HORIZON</div>
-        </div>
-
-        <div class="strategy-tabs">
-          <button class="strat-tab active" data-strat="conservative" onclick="selectStrategy('conservative',this)">Conservative</button>
-          <button class="strat-tab" data-strat="balanced" onclick="selectStrategy('balanced',this)">Balanced</button>
-          <button class="strat-tab" data-strat="growth" onclick="selectStrategy('growth',this)">Growth</button>
-          <button class="strat-tab" data-strat="aggressive" onclick="selectStrategy('aggressive',this)">Aggressive</button>
+    <!-- Chart -->
+    <div class="dcol" id="chartcol">
+      <div class="chdr">
+        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="ctitle" id="chrtlbl">Advanced Chart</span>
+        <div class="tfrow">
+          <button class="tfb" onclick="setTF(this,'1')">1m</button>
+          <button class="tfb" onclick="setTF(this,'5')">5m</button>
+          <button class="tfb" onclick="setTF(this,'15')">15m</button>
+          <button class="tfb" onclick="setTF(this,'60')">1H</button>
+          <button class="tfb" onclick="setTF(this,'240')">4H</button>
+          <button class="tfb on" onclick="setTF(this,'D')">1D</button>
+          <button class="tfb" onclick="setTF(this,'W')">1W</button>
         </div>
       </div>
-
-      <div class="strat-meta-bar" id="strat-meta-bar">
-        <span class="strat-desc" id="strat-desc">Low volatility, dividend-focused blue chips</span>
-        <span class="meta-pill return" id="meta-return">8–12% proj.</span>
-        <span class="meta-pill risk-low" id="meta-risk">LOW RISK</span>
-      </div>
-
-      <div id="stocks-list"></div>
+      <div id="chartbox"></div>
     </div>
 
-    <!-- RIGHT: GLOBAL MARKETS -->
-    <div class="panel" id="market-panel" style="border-right:none;">
-      <div class="panel-hdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span class="panel-title">Global Markets</span>
+    <!-- Global Markets -->
+    <div class="dcol" style="border-right:none">
+      <div class="chdr">
+        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="ctitle">Global Markets</span>
       </div>
-      <div class="widget-fill">
-        <div class="tradingview-widget-container" style="width:100%;height:100%;">
-          <div class="tradingview-widget-container__widget" style="width:100%;height:100%;"></div>
+      <div style="flex:1;min-height:0;position:relative">
+        <div class="tradingview-widget-container" style="width:100%;height:100%">
+          <div class="tradingview-widget-container__widget" style="width:100%;height:100%"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-          {
-            "colorTheme": "dark",
-            "dateRange": "3M",
-            "showChart": true,
-            "locale": "en",
-            "isTransparent": true,
-            "showSymbolLogo": true,
-            "showFloatingTooltip": false,
-            "width": "100%",
-            "height": "100%",
-            "plotLineColorGrowing": "#00e676",
-            "plotLineColorFalling": "#ff3d57",
-            "gridLineColor": "rgba(245,166,35,0.05)",
-            "scaleFontColor": "#475569",
-            "belowLineFillColorGrowing": "rgba(0,230,118,0.05)",
-            "belowLineFillColorFalling": "rgba(255,61,87,0.05)",
-            "belowLineFillColorGrowingBottom": "transparent",
-            "belowLineFillColorFallingBottom": "transparent",
-            "symbolActiveColor": "rgba(245,166,35,0.1)",
-            "tabs": [
-              {"title": "Indices","symbols": [{"s": "FOREXCOM:SPXUSD","d": "S&P 500"},{"s": "FOREXCOM:NSXUSD","d": "Nasdaq 100"},{"s": "FOREXCOM:DJI","d": "Dow Jones"},{"s": "TVC:VIX","d": "VIX"},{"s": "SPREADEX:DAX","d": "Germany DAX"},{"s": "INDEX:CAC40","d": "France CAC 40"},{"s": "TVC:NI225","d": "Nikkei 225"},{"s": "INDEX:HSI","d": "Hang Seng"},{"s": "BSE:SENSEX","d": "India SENSEX"}],"originalTitle": "Indices"},
-              {"title": "Futures","symbols": [{"s": "CME_MINI:ES1!","d": "S&P 500 Futures"},{"s": "CME_MINI:NQ1!","d": "Nasdaq Futures"},{"s": "TVC:GOLD","d": "Gold"},{"s": "TVC:OIL","d": "Crude Oil"},{"s": "TVC:SILVER","d": "Silver"}],"originalTitle": "Futures"},
-              {"title": "Crypto","symbols": [{"s": "BINANCE:BTCUSDT","d": "Bitcoin"},{"s": "BINANCE:ETHUSDT","d": "Ethereum"},{"s": "BINANCE:SOLUSDT","d": "Solana"},{"s": "BINANCE:BNBUSDT","d": "BNB"},{"s": "BINANCE:XRPUSDT","d": "XRP"}],"originalTitle": "Crypto"},
-              {"title": "Forex","symbols": [{"s": "FX:EURUSD"},{"s": "FX:GBPUSD"},{"s": "FX:USDJPY"},{"s": "FX:USDCHF"},{"s": "FX:AUDUSD"}],"originalTitle": "Forex"}
-            ]
-          }
+          {"colorTheme":"light","dateRange":"3M","showChart":true,"locale":"en","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":false,"width":"100%","height":"100%","plotLineColorGrowing":"#15803d","plotLineColorFalling":"#b91c1c","gridLineColor":"rgba(28,25,23,0.05)","scaleFontColor":"#a8a29e","belowLineFillColorGrowing":"rgba(21,128,61,0.04)","belowLineFillColorFalling":"rgba(185,28,28,0.04)","belowLineFillColorGrowingBottom":"transparent","belowLineFillColorFallingBottom":"transparent","symbolActiveColor":"rgba(201,120,12,0.08)","tabs":[{"title":"Indices","symbols":[{"s":"FOREXCOM:SPXUSD","d":"S&P 500"},{"s":"FOREXCOM:NSXUSD","d":"Nasdaq 100"},{"s":"FOREXCOM:DJI","d":"Dow Jones"},{"s":"TVC:VIX","d":"VIX"},{"s":"SPREADEX:DAX","d":"DAX"},{"s":"TVC:NI225","d":"Nikkei"},{"s":"BSE:SENSEX","d":"SENSEX"}],"originalTitle":"Indices"},{"title":"Futures","symbols":[{"s":"CME_MINI:ES1!","d":"S&P Futures"},{"s":"TVC:GOLD","d":"Gold"},{"s":"TVC:OIL","d":"Oil"},{"s":"TVC:SILVER","d":"Silver"}],"originalTitle":"Futures"},{"title":"Crypto","symbols":[{"s":"BINANCE:BTCUSDT","d":"Bitcoin"},{"s":"BINANCE:ETHUSDT","d":"Ethereum"},{"s":"BINANCE:SOLUSDT","d":"Solana"},{"s":"BINANCE:BNBUSDT","d":"BNB"}],"originalTitle":"Crypto"},{"title":"Forex","symbols":[{"s":"FX:EURUSD"},{"s":"FX:GBPUSD"},{"s":"FX:USDJPY"},{"s":"FX:USDCHF"}],"originalTitle":"Forex"}]}
           </script>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- BOTTOM SECTION -->
-  <div id="bottom">
+  <!-- Bottom Screener -->
+  <div class="dbottom">
+    <div class="dbhdr">
+      <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="ctitle">Stock Screener</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <select class="sel" id="scmkt" onchange="reloadSc()">
+          <option value="america">US Stocks</option>
+          <option value="crypto">Crypto</option>
+          <option value="forex">Forex</option>
+          <option value="futures">Futures</option>
+        </select>
+        <select class="sel" id="scscr" onchange="reloadSc()">
+          <option value="volume_leaders">Top Volume</option>
+          <option value="gainers">Top Gainers</option>
+          <option value="losers">Top Losers</option>
+          <option value="most_capitalized">Largest Cap</option>
+        </select>
+      </div>
+    </div>
+    <div id="scw"></div>
+  </div>
+</div>
 
-    <!-- SCREENER -->
-    <div id="screener-panel">
-      <div class="panel-hdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span class="panel-title">Top Volume — Global Screener</span>
-        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <select id="screener-market" onchange="reloadScreener()" style="background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-secondary);font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:2px;outline:none;cursor:pointer;">
-            <option value="america">US Stocks</option>
-            <option value="crypto">Crypto</option>
-            <option value="forex">Forex</option>
-            <option value="futures">Futures</option>
-          </select>
-          <select id="screener-screen" onchange="reloadScreener()" style="background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-secondary);font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:2px;outline:none;cursor:pointer;">
-            <option value="volume_leaders">Top Volume</option>
-            <option value="gainers">Top Gainers</option>
-            <option value="losers">Top Losers</option>
-            <option value="most_capitalized">Largest Cap</option>
-          </select>
+<!-- PAGE: CALCULATOR -->
+<div id="pg-calc" class="pg">
+  <div class="calc-wrap">
+    <div class="calc-main">
+      <div class="pg-title">Investment Calculator</div>
+      <div class="pg-sub">Enter your investment amount and choose a strategy to see AI-curated stock picks with confidence scoring.</div>
+
+      <div class="acard">
+        <div class="alrow">
+          <span class="albl">Invest Amount</span>
+          <span class="atag">12-MONTH HORIZON</span>
+        </div>
+        <div class="ainrow">
+          <div class="ainwrap">
+            <span class="asym">$</span>
+            <input id="ainput" type="number" value="1000" min="100" max="1000000" step="100">
+          </div>
+          <div class="qbtns">
+            <button class="qb" onclick="setAmt(500)">$500</button>
+            <button class="qb" onclick="setAmt(1000)">$1K</button>
+            <button class="qb" onclick="setAmt(5000)">$5K</button>
+            <button class="qb" onclick="setAmt(10000)">$10K</button>
+          </div>
         </div>
       </div>
-      <div id="screener-widget" style="flex:1;min-height:0;position:relative;"></div>
+
+      <div class="slbl">Choose Strategy</div>
+      <div class="sgrid" id="sgrid"></div>
+
+      <div class="smeta" id="smeta"></div>
+
+      <div id="slist"></div>
     </div>
 
-    <!-- PORTFOLIO SUMMARY -->
-    <div id="portfolio-panel">
-      <div class="panel-hdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span class="panel-title">Portfolio Summary</span>
-        <span class="panel-meta" style="margin-left:auto;" id="port-meta">Allocation Breakdown</span>
+    <div class="calc-aside">
+      <div class="aside-title">Portfolio Breakdown</div>
+      <div class="donut-wrap">
+        <div class="donut">
+          <svg class="dsvg" viewBox="0 0 90 90">
+            <circle cx="45" cy="45" r="36" fill="none" stroke="var(--off)" stroke-width="13"/>
+            <circle id="d0" cx="45" cy="45" r="36" fill="none" stroke-width="13" stroke-dasharray="0 226"/>
+            <circle id="d1" cx="45" cy="45" r="36" fill="none" stroke-width="13" stroke-dasharray="0 226"/>
+            <circle id="d2" cx="45" cy="45" r="36" fill="none" stroke-width="13" stroke-dasharray="0 226"/>
+            <circle id="d3" cx="45" cy="45" r="36" fill="none" stroke-width="13" stroke-dasharray="0 226"/>
+            <circle id="d4" cx="45" cy="45" r="36" fill="none" stroke-width="13" stroke-dasharray="0 226"/>
+          </svg>
+          <div class="dcenter">
+            <div class="dtotal" id="dtotal">$1,000</div>
+            <div class="dsub">TOTAL</div>
+          </div>
+        </div>
+        <div class="dleg" id="dleg"></div>
       </div>
-      <div class="portfolio-body">
-
-        <div class="donut-wrap">
-          <div class="donut-chart">
-            <svg class="donut-svg" viewBox="0 0 88 88">
-              <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="12"/>
-              <circle id="d0" cx="44" cy="44" r="36" fill="none" stroke-width="12" stroke-dasharray="0 226" stroke-linecap="butt"/>
-              <circle id="d1" cx="44" cy="44" r="36" fill="none" stroke-width="12" stroke-dasharray="0 226" stroke-linecap="butt"/>
-              <circle id="d2" cx="44" cy="44" r="36" fill="none" stroke-width="12" stroke-dasharray="0 226" stroke-linecap="butt"/>
-              <circle id="d3" cx="44" cy="44" r="36" fill="none" stroke-width="12" stroke-dasharray="0 226" stroke-linecap="butt"/>
-              <circle id="d4" cx="44" cy="44" r="36" fill="none" stroke-width="12" stroke-dasharray="0 226" stroke-linecap="butt"/>
-            </svg>
-            <div class="donut-center">
-              <span class="donut-total" id="donut-total">$1,000</span>
-              <span class="donut-sub">TOTAL</span>
-            </div>
-          </div>
-          <div class="donut-legend" id="donut-legend"></div>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="metric-grid">
-          <div class="metric-box">
-            <div class="metric-lbl">INVESTED</div>
-            <div class="metric-val accent" id="m-invested">$1,000</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-lbl">PROJ. VALUE</div>
-            <div class="metric-val green" id="m-proj">$1,080–$1,120</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-lbl">EXPECTED GAIN</div>
-            <div class="metric-val green" id="m-gain">+$80–$120</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-lbl">AVG CONFIDENCE</div>
-            <div class="metric-val" id="m-conf">85%</div>
-          </div>
-        </div>
-
-        <div class="risk-meter">
-          <div class="risk-header">
-            <span class="risk-lbl">RISK LEVEL</span>
-            <span class="risk-val" id="risk-label" style="color:var(--green)">LOW</span>
-          </div>
-          <div class="risk-track">
-            <div class="risk-needle" id="risk-needle" style="left:12%;"></div>
-          </div>
-        </div>
-
+      <div class="sep"></div>
+      <div class="mgrid">
+        <div class="mbox"><div class="mlbl">INVESTED</div><div class="mval a" id="minv">$1,000</div></div>
+        <div class="mbox"><div class="mlbl">PROJ. VALUE</div><div class="mval g" id="mproj">–</div></div>
+        <div class="mbox"><div class="mlbl">EXPECTED GAIN</div><div class="mval g" id="mgain">–</div></div>
+        <div class="mbox"><div class="mlbl">AVG CONFIDENCE</div><div class="mval" id="mconf">–</div></div>
       </div>
+      <div class="rbox">
+        <div class="rhdr"><span class="rlbl">RISK LEVEL</span><span class="rval" id="rlbl">–</span></div>
+        <div class="rtrack"><div class="rneedle" id="rneedle" style="left:10%"></div></div>
+      </div>
+      <div class="disc">Educational purposes only. These picks are illustrative and do not constitute financial advice. Past performance does not guarantee future results.</div>
     </div>
   </div>
+</div>
 
-  <script>
-    // ═══════════════════════════════════════════
-    // STRATEGY DATA
-    // ═══════════════════════════════════════════
-    const STRATEGIES = {
-      conservative: {
-        label: 'Conservative',
-        desc: 'Low volatility, dividend-focused blue chips with decades of stability',
-        return: '8–12%',
-        returnLow: 0.08, returnHigh: 0.12,
-        risk: 'LOW', riskPos: '12%', riskColor: 'var(--green)',
-        stocks: [
-          { ticker: 'MSFT', name: 'Microsoft Corp', sector: 'Technology', alloc: 25,
-            reason: 'Dominant cloud market share with Azure growing 31% YoY. Recurring M365 revenue, Copilot AI integration, and 60%+ gross margins create a virtually unassailable moat.',
-            confidence: 91, trend: '+18.2%' },
-          { ticker: 'AAPL', name: 'Apple Inc', sector: 'Consumer Technology', alloc: 20,
-            reason: 'Unmatched brand loyalty and ecosystem lock-in. Services segment (App Store, Apple TV+, iCloud) growing 14% YoY and now 25% of revenue, insulating from hardware cycles.',
-            confidence: 87, trend: '+12.4%' },
-          { ticker: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', alloc: 20,
-            reason: 'Healthcare giant with diversified pharma pipeline post-Kenvue spinoff. 62 consecutive years of dividend increases. Talc liability resolution removes the primary overhang.',
-            confidence: 83, trend: '+9.1%' },
-          { ticker: 'PG', name: 'Procter & Gamble', sector: 'Consumer Staples', alloc: 20,
-            reason: 'Consumer staples leader with pricing power across 65+ billion-dollar brands. Dividend aristocrat (67 years). Volume recovery as pricing laps now visible in quarterly reports.',
-            confidence: 85, trend: '+7.8%' },
-          { ticker: 'KO', name: 'Coca-Cola', sector: 'Beverages', alloc: 15,
-            reason: "200+ country distribution network and irreplaceable brand. Warren Buffett's core 30-year holding. 3.1% dividend yield provides income floor with international market expansion optionality.",
-            confidence: 80, trend: '+6.5%' },
-        ]
-      },
-      balanced: {
-        label: 'Balanced',
-        desc: 'Equal blend of growth conviction and income stability',
-        return: '14–20%',
-        returnLow: 0.14, returnHigh: 0.20,
-        risk: 'MEDIUM', riskPos: '40%', riskColor: 'var(--accent)',
-        stocks: [
-          { ticker: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors', alloc: 25,
-            reason: 'AI infrastructure backbone with 80%+ datacenter GPU market share. Blackwell architecture demand exceeds supply through 2026. CUDA ecosystem creates a 15-year software moat competitors cannot replicate.',
-            confidence: 94, trend: '+142%' },
-          { ticker: 'MSFT', name: 'Microsoft Corp', sector: 'Technology', alloc: 20,
-            reason: 'Azure cloud growth re-accelerating with AI workloads. OpenAI partnership creates durable enterprise differentiation. GitHub Copilot has 1.3M paid subscribers and growing.',
-            confidence: 91, trend: '+18.2%' },
-          { ticker: 'AMZN', name: 'Amazon.com', sector: 'E-Commerce / Cloud', alloc: 20,
-            reason: 'AWS remains #1 cloud at 31% market share with 17% growth acceleration. Advertising division growing 27% YoY — the most underappreciated margin-expansion engine in tech.',
-            confidence: 88, trend: '+22.5%' },
-          { ticker: 'JPM', name: 'JPMorgan Chase', sector: 'Financial Services', alloc: 20,
-            reason: "Best-in-class bank with a fortress balance sheet and $35B+ annual earnings. Benefits from higher-for-longer rate regime. Dimon's capital allocation track record across two decades is unmatched.",
-            confidence: 84, trend: '+14.3%' },
-          { ticker: 'META', name: 'Meta Platforms', sector: 'Social Media / AI', alloc: 15,
-            reason: '3.27B daily active users across the Family of Apps. AI-driven ad targeting delivering record-high ad pricing. Llama open-source strategy building enterprise goodwill. Reality Labs optionality underpriced.',
-            confidence: 86, trend: '+35.7%' },
-        ]
-      },
-      growth: {
-        label: 'Growth',
-        desc: 'High-conviction technology & innovation plays for maximum appreciation',
-        return: '25–45%',
-        returnLow: 0.25, returnHigh: 0.45,
-        risk: 'HIGH', riskPos: '68%', riskColor: '#ff9800',
-        stocks: [
-          { ticker: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors', alloc: 30,
-            reason: 'Generational semiconductor cycle driven by the AI arms race. Every major AI lab, hyperscaler, and sovereign AI initiative requires Hopper/Blackwell GPUs. Structural monopoly on AI compute with no credible challenger until 2027+.',
-            confidence: 94, trend: '+142%' },
-          { ticker: 'META', name: 'Meta Platforms', sector: 'Social Media / AI', alloc: 25,
-            reason: "'Year of Efficiency' delivered 70% EPS growth. Llama AI models powering ad relevance improvements. WhatsApp monetization (1B+ business users) barely started. At 24x forward PE, historically cheapest it has ever traded.",
-            confidence: 89, trend: '+35.7%' },
-          { ticker: 'AMZN', name: 'Amazon.com', sector: 'E-Commerce / Cloud', alloc: 20,
-            reason: "AWS growth re-accelerating to 17%. Trainium2 AI chips reduce NVIDIA dependency. Operating margin expanding 400bps YoY as fulfillment network achieves structural efficiency post-overbuilding.",
-            confidence: 87, trend: '+22.5%' },
-          { ticker: 'GOOGL', name: 'Alphabet Inc', sector: 'Technology / AI', alloc: 15,
-            reason: 'Search monopoly intact despite AI disruption fears. YouTube ad revenue recovering (+16% YoY). Google Cloud growing 28% and approaching profitability. DeepMind and Waymo deeply undervalued as embedded options.',
-            confidence: 85, trend: '+16.8%' },
-          { ticker: 'TSLA', name: 'Tesla Inc', sector: 'EV / Energy / AI', alloc: 10,
-            reason: 'FSD autonomy progress accelerating materially. Optimus humanoid robot in limited production with 2026 commercial timeline. Energy storage business growing 67% YoY. High execution risk but asymmetric upside.',
-            confidence: 68, trend: '+28.4%' },
-        ]
-      },
-      aggressive: {
-        label: 'Aggressive',
-        desc: 'Maximum upside, elevated risk — for conviction investors only',
-        return: '40–80%',
-        returnLow: 0.40, returnHigh: 0.80,
-        risk: 'VERY HIGH', riskPos: '88%', riskColor: 'var(--red)',
-        stocks: [
-          { ticker: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors', alloc: 25,
-            reason: 'AI arms race has years to run. Blackwell demand backlog extends into 2027. NIM software + inference business adding a high-margin software revenue layer on top of the hardware monopoly.',
-            confidence: 93, trend: '+142%' },
-          { ticker: 'PLTR', name: 'Palantir Technologies', sector: 'AI / Defense Tech', alloc: 20,
-            reason: 'AIP platform winning major US government and enterprise AI deals. US commercial revenue growing 55% YoY. S&P 500 inclusion expanded institutional ownership base. Government AI procurement cycle just beginning.',
-            confidence: 78, trend: '+82%' },
-          { ticker: 'ARM', name: 'Arm Holdings', sector: 'Semiconductors', alloc: 20,
-            reason: 'Royalty on every mobile chip worldwide. AI edge computing transition to CSS-based designs accelerates ASP expansion significantly. 99% of smartphones globally run on ARM architecture — structural royalty toll.',
-            confidence: 76, trend: '+64%' },
-          { ticker: 'TSLA', name: 'Tesla Inc', sector: 'EV / Robotics / AI', alloc: 20,
-            reason: 'Robotaxi network launch + Optimus production could entirely reshape the valuation multiple. Binary outcome — catastrophic miss or transformative success. Current price implies no credit for autonomous or robotics optionality.',
-            confidence: 67, trend: '+28.4%' },
-          { ticker: 'SMCI', name: 'Super Micro Computer', sector: 'AI Infrastructure', alloc: 15,
-            reason: 'AI server infrastructure at premium growth rates (~80% YoY). Accounting issues resolved with 10-K filing. Direct GPU rack integration creates sticky enterprise relationships. Leveraged to every NVDA GPU shipment cycle.',
-            confidence: 63, trend: '+41%' },
-        ]
-      }
-    };
+<!-- PAGE: TOP TRADERS -->
+<div id="pg-traders" class="pg">
+  <div class="tr-inner">
+    <div class="tr-hero">
+      <div class="tr-eye">Market Intelligence</div>
+      <h1 class="tr-h1">Top TradingView Analysts</h1>
+      <p class="tr-p">Curated insights from the most-followed market analysts on TradingView — their specialties, current conviction picks, and published theses.</p>
+      <span class="tr-disc-hero">For educational purposes · Not financial advice · Data is illustrative</span>
+    </div>
 
-    const SEGMENT_COLORS = ['#f5a623','#818cf8','#00e676','#38bdf8','#f87171'];
+    <div class="tr-grid" id="trgrid"></div>
+  </div>
+</div>
 
-    let currentStrategy = 'conservative';
-    let animTimeout = null;
+<script>
+// ══════════════════════════════════════
+// DATA
+// ══════════════════════════════════════
+const STRATEGIES = {
+  conservative:{label:'Conservative',desc:'Low volatility blue chips with decades of proven stability',ret:'8–12%',rlo:.08,rhi:.12,risk:'LOW',rpos:'10%',rcol:'var(--green)',
+    stocks:[
+      {t:'MSFT',n:'Microsoft Corp',sec:'Technology',a:25,conf:91,trend:'+18.2%',reason:'Dominant cloud market share with Azure growing 31% YoY. M365 Copilot integration and 60%+ gross margins create a near-unassailable competitive moat.'},
+      {t:'AAPL',n:'Apple Inc',sec:'Consumer Tech',a:20,conf:87,trend:'+12.4%',reason:'Services segment (App Store, iCloud, TV+) now 25% of revenue and growing 14% YoY, insulating the business from hardware cycle volatility.'},
+      {t:'JNJ',n:'Johnson & Johnson',sec:'Healthcare',a:20,conf:83,trend:'+9.1%',reason:'62 consecutive years of dividend increases. Post-Kenvue spinoff the company is a focused pharma play with a deep pipeline and fortress balance sheet.'},
+      {t:'PG',n:'Procter & Gamble',sec:'Consumer Staples',a:20,conf:85,trend:'+7.8%',reason:'Pricing power across 65+ billion-dollar brands. Volume recovery visible as pricing laps. Dividend aristocrat for 67 straight years.'},
+      {t:'KO',n:'Coca-Cola',sec:'Beverages',a:15,conf:80,trend:'+6.5%',reason:"200+ country distribution and irreplaceable brand. Buffett's 30-year core holding. 3.1% dividend yield provides income floor."},
+    ]},
+  balanced:{label:'Balanced',desc:'Growth conviction blended with income stability and diversification',ret:'14–20%',rlo:.14,rhi:.20,risk:'MEDIUM',rpos:'38%',rcol:'#d97706',
+    stocks:[
+      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:25,conf:94,trend:'+142%',reason:'AI infrastructure backbone with 80%+ datacenter GPU market share. Blackwell demand backlog extends through 2026. CUDA creates a 15-year software moat.'},
+      {t:'MSFT',n:'Microsoft Corp',sec:'Technology',a:20,conf:91,trend:'+18.2%',reason:'Azure cloud re-accelerating with AI workloads. OpenAI partnership differentiates across enterprise. GitHub Copilot at 1.3M paid subscribers and growing.'},
+      {t:'AMZN',n:'Amazon.com',sec:'Cloud / E-Commerce',a:20,conf:88,trend:'+22.5%',reason:'AWS at 31% market share, re-accelerating to 17% growth. Advertising division growing 27% YoY — the most underappreciated margin engine in tech.'},
+      {t:'JPM',n:'JPMorgan Chase',sec:'Financial Services',a:20,conf:84,trend:'+14.3%',reason:"Best-in-class bank, $35B+ annual earnings, fortress balance sheet. Benefits from higher-for-longer rates. Dimon's capital allocation track record is unmatched."},
+      {t:'META',n:'Meta Platforms',sec:'Social Media / AI',a:15,conf:86,trend:'+35.7%',reason:'3.27B daily active users. AI-driven ad targeting delivering record pricing. Llama open-source strategy building durable enterprise goodwill.'},
+    ]},
+  growth:{label:'Growth',desc:'High-conviction technology and innovation plays for maximum appreciation',ret:'25–45%',rlo:.25,rhi:.45,risk:'HIGH',rpos:'65%',rcol:'#c2410c',
+    stocks:[
+      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:30,conf:94,trend:'+142%',reason:'Generational semiconductor cycle. Every AI lab, hyperscaler, and sovereign AI initiative requires Blackwell GPUs. Structural monopoly on AI compute with no credible challenger until 2027+.'},
+      {t:'META',n:'Meta Platforms',sec:'Social Media / AI',a:25,conf:89,trend:'+35.7%',reason:"Year of Efficiency delivered 70% EPS growth. WhatsApp monetization barely started. At 24x forward PE it's at its historically cheapest valuation ever."},
+      {t:'AMZN',n:'Amazon.com',sec:'Cloud / E-Commerce',a:20,conf:87,trend:'+22.5%',reason:'Trainium2 AI chips reduce NVIDIA dependency. Operating margin expanding 400bps YoY as fulfillment network achieves structural efficiency.'},
+      {t:'GOOGL',n:'Alphabet Inc',sec:'Technology / AI',a:15,conf:85,trend:'+16.8%',reason:'Search monopoly intact. YouTube ad revenue +16% YoY. Google Cloud growing 28% approaching profitability. DeepMind and Waymo deeply undervalued as embedded options.'},
+      {t:'TSLA',n:'Tesla Inc',sec:'EV / Robotics / AI',a:10,conf:68,trend:'+28.4%',reason:'FSD autonomy progress accelerating. Optimus humanoid in limited production. Energy storage growing 67% YoY. High execution risk but asymmetric upside.'},
+    ]},
+  aggressive:{label:'Aggressive',desc:'Maximum upside potential with elevated risk — conviction investors only',ret:'40–80%',rlo:.40,rhi:.80,risk:'VERY HIGH',rpos:'88%',rcol:'var(--red)',
+    stocks:[
+      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:25,conf:93,trend:'+142%',reason:'AI arms race has years to run. Blackwell backlog through 2027. NIM software and inference business layering high-margin revenue on top of the hardware monopoly.'},
+      {t:'PLTR',n:'Palantir Technologies',sec:'AI / Defense',a:20,conf:78,trend:'+82%',reason:'AIP platform winning major US gov and enterprise AI deals. US commercial revenue growing 55% YoY. S&P 500 inclusion expanded institutional ownership.'},
+      {t:'ARM',n:'Arm Holdings',sec:'Semiconductors',a:20,conf:76,trend:'+64%',reason:'Royalty on every mobile chip worldwide. AI edge computing transition accelerates ASP expansion. 99% of smartphones globally run ARM architecture.'},
+      {t:'TSLA',n:'Tesla Inc',sec:'EV / Robotics / AI',a:20,conf:67,trend:'+28.4%',reason:'Robotaxi network launch + Optimus production could entirely reshape the valuation multiple. Binary outcome — massive upside if autonomous vision executes.'},
+      {t:'SMCI',n:'Super Micro Computer',sec:'AI Infrastructure',a:15,conf:63,trend:'+41%',reason:'AI server infrastructure at ~80% revenue growth. Accounting issues resolved. Direct GPU rack integration creates sticky enterprise relationships.'},
+    ]},
+};
 
-    // ═══════════════════════════════════════════
-    // WATCHLIST STATE
-    // ═══════════════════════════════════════════
-    const DEFAULT_WL = [
-      { s: 'FOREXCOM:SPXUSD', d: 'SPX',   n: 'S&P 500',    t: 'idx' },
-      { s: 'FOREXCOM:NSXUSD', d: 'NDX',   n: 'Nasdaq 100', t: 'idx' },
-      { s: 'TVC:VIX',         d: 'VIX',   n: 'Volatility', t: 'idx' },
-      { s: 'NASDAQ:NVDA',     d: 'NVDA',  n: 'NVIDIA',     t: 'stk' },
-      { s: 'NASDAQ:MSFT',     d: 'MSFT',  n: 'Microsoft',  t: 'stk' },
-      { s: 'NASDAQ:AAPL',     d: 'AAPL',  n: 'Apple',      t: 'stk' },
-      { s: 'NASDAQ:META',     d: 'META',  n: 'Meta',       t: 'stk' },
-      { s: 'NASDAQ:AMZN',     d: 'AMZN',  n: 'Amazon',     t: 'stk' },
-      { s: 'NASDAQ:GOOGL',    d: 'GOOGL', n: 'Alphabet',   t: 'stk' },
-      { s: 'NASDAQ:TSLA',     d: 'TSLA',  n: 'Tesla',      t: 'stk' },
-      { s: 'NYSE:JPM',        d: 'JPM',   n: 'JPMorgan',   t: 'stk' },
-      { s: 'NYSE:PLTR',       d: 'PLTR',  n: 'Palantir',   t: 'stk' },
-      { s: 'NASDAQ:ARM',      d: 'ARM',   n: 'Arm Holdings',t: 'stk' },
-      { s: 'BINANCE:BTCUSDT', d: 'BTC',   n: 'Bitcoin',    t: 'cry' },
-      { s: 'BINANCE:ETHUSDT', d: 'ETH',   n: 'Ethereum',   t: 'cry' },
-      { s: 'FX:EURUSD',       d: 'EUR/USD',n: 'Euro/USD',  t: 'fx'  },
-    ];
-    let wl = JSON.parse(localStorage.getItem('vega_wl') || 'null') || DEFAULT_WL;
+const SEG_COLORS = ['#c9780c','#4f46e5','#15803d','#0284c7','#be123c'];
+const CIRC = 2*Math.PI*36;
 
-    // ═══════════════════════════════════════════
-    // CLOCK
-    // ═══════════════════════════════════════════
-    function tickClock() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2,'0');
-      document.getElementById('clock').textContent =
-        `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())} UTC`;
-      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      document.getElementById('date-display').textContent =
-        `${days[now.getUTCDay()]} ${now.getUTCDate()} ${months[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
+const TRADERS = [
+  {name:'TradingShot',handle:'@TradingShot',init:'TS',bg:'#1e40af',fg:'#fff',badge:'TECHNICALS',
+   spec:'Global market technician specializing in multi-timeframe Elliott Wave analysis and major index cycle forecasting.',
+   follows:'97.4K',ideas:'2,840',acc:'74%',updated:'Apr 17, 2026',
+   picks:[{t:'NVDA',n:'NVIDIA',a:'bull'},{t:'SPX',n:'S&P 500',a:'bull'},{t:'BTC',n:'Bitcoin',a:'watch'}],
+   thesis:'"AI semiconductor supercycle entering wave 3 up. NVDA consolidation is textbook wave 4 — expect acceleration through Q3 2026."'},
+  {name:'CryptoFaibik',handle:'@CryptoFaibik',init:'CF',bg:'#d97706',fg:'#fff',badge:'CRYPTO',
+   spec:'Bitcoin cycle analyst tracking halving epochs, dominance shifts, and altcoin rotation patterns since 2017.',
+   follows:'83.1K',ideas:'1,620',acc:'69%',updated:'Apr 16, 2026',
+   picks:[{t:'BTC',n:'Bitcoin',a:'bull'},{t:'ETH',n:'Ethereum',a:'bull'},{t:'SOL',n:'Solana',a:'watch'}],
+   thesis:'"Post-halving distribution phase complete. On-chain accumulation addresses at all-time highs. Pre-parabolic quiet before the next leg."'},
+  {name:'Jdehorty',handle:'@jdehorty',init:'JD',bg:'#7c3aed',fg:'#fff',badge:'ML / QUANT',
+   spec:'Machine learning engineer building probabilistic trading models. Creator of the Naïve Bayes classifier indicator on TradingView.',
+   follows:'71.8K',ideas:'980',acc:'77%',updated:'Apr 18, 2026',
+   picks:[{t:'MSFT',n:'Microsoft',a:'bull'},{t:'QQQ',n:'Nasdaq ETF',a:'bull'},{t:'AAPL',n:'Apple',a:'watch'}],
+   thesis:'"ML signal confluence on QQQ strongest since Oct 2023. Breadth expanding across large-cap tech — momentum rotating back into mega-cap quality."'},
+  {name:'QuantVue',handle:'@QuantVue',init:'QV',bg:'#0369a1',fg:'#fff',badge:'OPTIONS FLOW',
+   spec:'Dark pool and unusual options activity tracker. Institutional order flow analysis across equity and derivatives markets.',
+   follows:'58.4K',ideas:'1,240',acc:'71%',updated:'Apr 17, 2026',
+   picks:[{t:'META',n:'Meta Platforms',a:'bull'},{t:'SPY',n:'S&P 500 ETF',a:'bull'},{t:'NVDA',n:'NVIDIA',a:'bull'}],
+   thesis:'"Massive call sweep on META $700 strike, 90 DTE. Dark pool prints show institutional accumulation in semis. Smart money is positioned long into earnings."'},
+  {name:'WyckoffMode',handle:'@WyckoffMode',init:'WM',bg:'#065f46',fg:'#fff',badge:'WYCKOFF',
+   spec:'Wyckoff methodology practitioner analyzing accumulation and distribution schematics across equities, crypto, and commodities.',
+   follows:'44.7K',ideas:'760',acc:'68%',updated:'Apr 15, 2026',
+   picks:[{t:'BTC',n:'Bitcoin',a:'bull'},{t:'GLD',n:'Gold ETF',a:'bull'},{t:'MSFT',n:'Microsoft',a:'watch'}],
+   thesis:'"BTC completed textbook spring on weekly chart. Volume confirmation on upthrust test is in. Gold re-accumulation schematic running — both are in markup phase."'},
+  {name:'Investingcom',handle:'@Investing.com',init:'IC',bg:'#9f1239',fg:'#fff',badge:'MACRO',
+   spec:'Macro and fundamental analysis covering sector rotation, earnings cycles, central bank policy, and global capital flows.',
+   follows:'124.2K',ideas:'3,480',acc:'65%',updated:'Apr 18, 2026',
+   picks:[{t:'XLK',n:'Tech Sector ETF',a:'bull'},{t:'GLD',n:'Gold ETF',a:'bull'},{t:'XLV',n:'Healthcare ETF',a:'watch'}],
+   thesis:'"Fed pivot probability rising as CPI cools. Risk-on favours tech overweight. Gold as dual hedge against currency debasement and geopolitical uncertainty."'},
+];
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let curStrat = 'conservative';
+let curSym = 'FOREXCOM:SPXUSD', curTF = 'D', curLabel = 'SPX';
+
+const DEFAULT_WL = [
+  {s:'FOREXCOM:SPXUSD',d:'SPX',n:'S&P 500',t:'i'},{s:'FOREXCOM:NSXUSD',d:'NDX',n:'Nasdaq 100',t:'i'},
+  {s:'TVC:VIX',d:'VIX',n:'Volatility',t:'i'},{s:'NASDAQ:NVDA',d:'NVDA',n:'NVIDIA',t:'s'},
+  {s:'NASDAQ:MSFT',d:'MSFT',n:'Microsoft',t:'s'},{s:'NASDAQ:AAPL',d:'AAPL',n:'Apple',t:'s'},
+  {s:'NASDAQ:META',d:'META',n:'Meta',t:'s'},{s:'NASDAQ:AMZN',d:'AMZN',n:'Amazon',t:'s'},
+  {s:'NASDAQ:GOOGL',d:'GOOGL',n:'Alphabet',t:'s'},{s:'NASDAQ:TSLA',d:'TSLA',n:'Tesla',t:'s'},
+  {s:'NYSE:JPM',d:'JPM',n:'JPMorgan',t:'s'},{s:'NYSE:PLTR',d:'PLTR',n:'Palantir',t:'s'},
+  {s:'NASDAQ:ARM',d:'ARM',n:'Arm Holdings',t:'s'},{s:'BINANCE:BTCUSDT',d:'BTC',n:'Bitcoin',t:'c'},
+  {s:'BINANCE:ETHUSDT',d:'ETH',n:'Ethereum',t:'c'},{s:'FX:EURUSD',d:'EUR/USD',n:'Euro/USD',t:'f'},
+];
+let wl = JSON.parse(localStorage.getItem('vega_wl')||'null')||DEFAULT_WL;
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function showPage(id, btn) {
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ══════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════
+function tick() {
+  const n=new Date(),p=v=>String(v).padStart(2,'0');
+  document.getElementById('clock').textContent=`${p(n.getUTCHours())}:${p(n.getUTCMinutes())}:${p(n.getUTCSeconds())} UTC`;
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],mons=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('ddate').textContent=`${days[n.getUTCDay()]} ${n.getUTCDate()} ${mons[n.getUTCMonth()]} ${n.getUTCFullYear()}`;
+}
+setInterval(tick,1000); tick();
+
+// ══════════════════════════════════════
+// WATCHLIST
+// ══════════════════════════════════════
+const CAT={i:'Indices',s:'Stocks',c:'Crypto',f:'Forex'};
+const BCLS={i:'bi',s:'bs',c:'bc',f:'bf'};
+const BTXT={i:'IDX',s:'STK',c:'CRY',f:'FX'};
+
+function renderWL(filter=''){
+  const list=document.getElementById('wll');
+  const f=filter.toLowerCase();
+  const items=f?wl.filter(w=>w.d.toLowerCase().includes(f)||w.n.toLowerCase().includes(f)):wl;
+  document.getElementById('wlcnt').textContent=wl.length;
+  if(!items.length){list.innerHTML=`<div style="padding:20px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">No results</div>`;return;}
+  let h='';
+  for(const cat of ['i','s','c','f']){
+    const rows=items.filter(w=>w.t===cat);
+    if(!rows.length) continue;
+    if(!f) h+=`<div class="catlbl">${CAT[cat]}</div>`;
+    for(const w of rows){
+      h+=`<div class="wlrow" onclick="selSym('${w.s}','${w.d}')">
+        <div class="wlt">${w.d}</div><div class="wln">${w.n}</div>
+        <div class="wlb ${BCLS[w.t]}">${BTXT[w.t]}</div>
+        <div class="wld" onclick="delSym(event,'${w.s}')">×</div>
+      </div>`;
     }
-    setInterval(tickClock, 1000);
-    tickClock();
+  }
+  list.innerHTML=h;
+}
+function delSym(e,sym){e.stopPropagation();wl=wl.filter(w=>w.s!==sym);localStorage.setItem('vega_wl',JSON.stringify(wl));renderWL(document.getElementById('wlinput').value);}
+const wlinput=document.getElementById('wlinput');
+wlinput.addEventListener('input',()=>renderWL(wlinput.value));
+wlinput.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const v=wlinput.value.trim(); if(!v) return;
+  const u=v.toUpperCase();
+  if(wl.find(w=>w.d===u)){wlinput.value='';return;}
+  const s=v.includes(':')?v:['BTC','ETH','SOL','BNB','XRP','ADA','DOGE'].includes(u)?`BINANCE:${u}USDT`:`NASDAQ:${u}`;
+  wl.push({s,d:u,n:v,t:s.includes('BINANCE')?'c':s.includes('FX:')?'f':'s'});
+  localStorage.setItem('vega_wl',JSON.stringify(wl));
+  wlinput.value=''; renderWL();
+});
 
-    // ═══════════════════════════════════════════
-    // WATCHLIST RENDER
-    // ═══════════════════════════════════════════
-    const CAT = { idx: 'Indices', stk: 'Stocks', cry: 'Crypto', fx: 'Forex' };
-    const BADGE = { idx: 'b-idx', stk: 'b-stk', cry: 'b-cry', fx: 'b-fx' };
-    const BTXT  = { idx: 'IDX', stk: 'STK', cry: 'CRY', fx: 'FX' };
+// ══════════════════════════════════════
+// CHART
+// ══════════════════════════════════════
+function loadChart(sym,tf){
+  const p=new URLSearchParams({symbol:sym,interval:tf,theme:'light',style:'1',locale:'en',timezone:'Etc/UTC',toolbar_bg:'fafaf8',enable_publishing:'false',hide_top_toolbar:'false',hide_legend:'false',save_image:'false',container_id:'vega_chart',withdateranges:'1',allow_symbol_change:'1',details:'1',hide_side_toolbar:'0'});
+  document.getElementById('chartbox').innerHTML=`<iframe src="https://www.tradingview.com/widgetembed/?${p}" allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen style="width:100%;height:100%;border:none;display:block"></iframe>`;
+}
+function selSym(sym,lbl){curSym=sym;curLabel=lbl;document.getElementById('chrtlbl').textContent=lbl;loadChart(sym,curTF);renderWL(wlinput.value);}
+function setTF(btn,tf){curTF=tf;document.querySelectorAll('.tfb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadChart(curSym,tf);}
 
-    function renderWL(filter = '') {
-      const list = document.getElementById('wl-list');
-      const f = filter.toLowerCase();
-      const filtered = f ? wl.filter(w => w.d.toLowerCase().includes(f) || w.n.toLowerCase().includes(f)) : wl;
-      document.getElementById('wl-count').textContent = `${wl.length}`;
-      if (filtered.length === 0) { list.innerHTML = `<div style="padding:20px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);">No results</div>`; return; }
-      let html = '';
-      for (const cat of ['idx','stk','cry','fx']) {
-        const items = filtered.filter(w => w.t === cat);
-        if (!items.length) continue;
-        if (!f) html += `<div class="cat-label">${CAT[cat]}</div>`;
-        for (const item of items) {
-          html += `<div class="wl-item" data-sym="${item.s}">
-            <div class="wl-ticker">${item.d}</div>
-            <div class="wl-name">${item.n}</div>
-            <div class="type-badge ${BADGE[item.t]}">${BTXT[item.t]}</div>
-            <div class="wl-delete" onclick="deleteSym(event,'${item.s}')" title="Remove">×</div>
-          </div>`;
-        }
-      }
-      list.innerHTML = html;
-    }
+// ══════════════════════════════════════
+// SCREENER
+// ══════════════════════════════════════
+function reloadSc(){
+  const mkt=document.getElementById('scmkt').value,scr=document.getElementById('scscr').value;
+  const c=document.getElementById('scw'); c.innerHTML='';
+  const w=document.createElement('div'); w.style.cssText='width:100%;height:100%';
+  const i=document.createElement('div'); i.className='tradingview-widget-container__widget'; i.style.cssText='width:100%;height:100%';
+  const s=document.createElement('script'); s.type='text/javascript';
+  s.src='https://s3.tradingview.com/external-embedding/embed-widget-screener.js'; s.async=true;
+  s.textContent=JSON.stringify({width:'100%',height:'100%',defaultColumn:'overview',defaultScreen:scr,market:mkt,showToolbar:true,colorTheme:'light',locale:'en',isTransparent:true});
+  w.appendChild(i); w.appendChild(s); c.appendChild(w);
+}
 
-    function deleteSym(e, sym) {
-      e.stopPropagation();
-      wl = wl.filter(w => w.s !== sym);
-      localStorage.setItem('vega_wl', JSON.stringify(wl));
-      renderWL(document.getElementById('wl-input').value);
-    }
+// ══════════════════════════════════════
+// CALCULATOR
+// ══════════════════════════════════════
+function getAmt(){return Math.max(100,parseFloat(document.getElementById('ainput').value)||1000);}
+function setAmt(v){document.getElementById('ainput').value=v;renderCalc();}
 
-    const input = document.getElementById('wl-input');
-    input.addEventListener('input', () => renderWL(input.value));
-    input.addEventListener('keydown', e => {
-      if (e.key !== 'Enter') return;
-      const val = input.value.trim();
-      if (!val) return;
-      const up = val.toUpperCase();
-      if (wl.find(w => w.d === up)) { input.value = ''; return; }
-      const sym = val.includes(':') ? val :
-        (['BTC','ETH','SOL','BNB','XRP','ADA','DOGE'].includes(up) ? `BINANCE:${up}USDT` : `NASDAQ:${up}`);
-      const entry = { s: sym, d: up, n: val, t: sym.includes('BINANCE') ? 'cry' : sym.includes('FX:') ? 'fx' : 'stk' };
-      wl.push(entry);
-      localStorage.setItem('vega_wl', JSON.stringify(wl));
-      input.value = '';
-      renderWL();
-    });
+function confCls(c){
+  if(c>=90) return['f-a','t-a'];
+  if(c>=80) return['f-b','t-b'];
+  if(c>=70) return['f-c','t-c'];
+  return['f-d','t-d'];
+}
 
-    // ═══════════════════════════════════════════
-    // INVESTMENT CALCULATOR
-    // ═══════════════════════════════════════════
-    function getAmount() {
-      const v = parseFloat(document.getElementById('amount-input').value) || 1000;
-      return Math.max(100, v);
-    }
+function renderStratCards(){
+  const g=document.getElementById('sgrid'); g.innerHTML='';
+  const riskCls={LOW:'p-lo',MEDIUM:'p-me',HIGH:'p-hi','VERY HIGH':'p-vh'};
+  for(const [k,v] of Object.entries(STRATEGIES)){
+    const div=document.createElement('div');
+    div.className='scard'+(k===curStrat?' on':'');
+    div.innerHTML=`<div class="scard-n">${v.label}</div><div class="scard-r">${v.ret} proj.</div><div class="scard-rk"><span class="pill ${riskCls[v.risk]}">${v.risk}</span></div>`;
+    div.onclick=()=>{curStrat=k;renderCalc();};
+    g.appendChild(div);
+  }
+}
 
-    function confClass(c) {
-      if (c >= 90) return ['conf-90plus', 'conf-90plus-text'];
-      if (c >= 80) return ['conf-80plus', 'conf-80plus-text'];
-      if (c >= 70) return ['conf-70plus', 'conf-70plus-text'];
-      return ['conf-below70', 'conf-below70-text'];
-    }
+function renderCalc(){
+  renderStratCards();
+  const strat=STRATEGIES[curStrat], amt=getAmt();
+  const riskCls={LOW:'p-lo',MEDIUM:'p-me',HIGH:'p-hi','VERY HIGH':'p-vh'};
+  document.getElementById('smeta').innerHTML=`<span class="smeta-d">${strat.desc}</span><span class="pill p-ret">${strat.ret} proj.</span><span class="pill ${riskCls[strat.risk]}">${strat.risk} RISK</span>`;
 
-    function renderStocks() {
-      const strat = STRATEGIES[currentStrategy];
-      const amount = getAmount();
-      const list = document.getElementById('stocks-list');
+  const list=document.getElementById('slist'); list.innerHTML='';
+  strat.stocks.forEach((s,i)=>{
+    const allocAmt=(amt*s.a/100);
+    const projAmt=(allocAmt*(1+parseFloat(s.trend)/100));
+    const [fc,tc]=confCls(s.conf);
+    const card=document.createElement('div'); card.className='stkcard'; card.style.animationDelay=i*55+'ms';
+    card.innerHTML=`
+      <div class="sk1">
+        <div class="skbadge">${s.t}</div>
+        <div class="skinfo"><div class="skname">${s.n}</div><div class="sksec">${s.sec}</div></div>
+        <div class="skamt"><span class="skdol">$${allocAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="skpct">${s.a}% of portfolio</span></div>
+      </div>
+      <div class="crow">
+        <span class="clbl">CONFIDENCE</span>
+        <div class="ctrack"><div class="cfill ${fc}" data-t="${s.conf}" style="width:0%"></div></div>
+        <span class="cnum ${tc}">${s.conf}%</span>
+      </div>
+      <div class="skreason">${s.reason}</div>
+      <div class="skproj">
+        <span class="skplbl">12-MONTH PROJECTION</span>
+        <div class="skpv"><span class="sktrend">${s.trend}</span><span class="skout">→ $${projAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+      </div>`;
+    list.appendChild(card);
+  });
 
-      let html = '';
-      strat.stocks.forEach((s, i) => {
-        const allocAmt = (amount * s.alloc / 100).toFixed(2);
-        const trendNum = parseFloat(s.trend.replace('%','').replace('+',''));
-        const projAmt = (parseFloat(allocAmt) * (1 + trendNum / 100)).toFixed(2);
-        const [barClass, textClass] = confClass(s.confidence);
-        html += `
-          <div class="stock-card" style="animation-delay:${i * 60}ms">
-            <div class="card-row1">
-              <div class="ticker-badge">${s.ticker}</div>
-              <div class="card-info">
-                <div class="card-company">${s.name}</div>
-                <div class="card-sector">${s.sector.toUpperCase()}</div>
-              </div>
-              <div class="card-amount-col">
-                <span class="card-alloc-amount">$${parseFloat(allocAmt).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-                <span class="card-alloc-pct">${s.alloc}% of portfolio</span>
-              </div>
-            </div>
-            <div class="confidence-row">
-              <span class="conf-label">CONFIDENCE</span>
-              <div class="conf-bar-track">
-                <div class="conf-bar-fill ${barClass}" data-target="${s.confidence}" style="width:0%"></div>
-              </div>
-              <span class="conf-value ${textClass}">${s.confidence}%</span>
-            </div>
-            <div class="card-reason">${s.reason}</div>
-            <div class="card-proj-row">
-              <span class="proj-label">12-MONTH PROJECTION</span>
-              <div class="proj-values">
-                <span class="proj-trend" style="${trendNum < 0 ? 'color:var(--red)' : ''}">${s.trend}</span>
-                <span class="proj-outcome">→ $${parseFloat(projAmt).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-              </div>
-            </div>
-          </div>`;
-      });
+  requestAnimationFrame(()=>document.querySelectorAll('.cfill').forEach(b=>{setTimeout(()=>b.style.width=b.dataset.t+'%',80);}));
+  renderPortfolio();
+}
 
-      list.innerHTML = html;
+function renderPortfolio(){
+  const strat=STRATEGIES[curStrat], amt=getAmt();
+  document.getElementById('dtotal').textContent='$'+amt.toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('minv').textContent='$'+amt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt=v=>'$'+v.toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('mproj').textContent=`${fmt(amt*(1+strat.rlo))}–${fmt(amt*(1+strat.rhi))}`;
+  document.getElementById('mgain').textContent=`+${fmt(amt*strat.rlo)}–${fmt(amt*strat.rhi)}`;
+  const avg=Math.round(strat.stocks.reduce((a,s)=>a+s.conf,0)/strat.stocks.length);
+  const ce=document.getElementById('mconf'); ce.textContent=avg+'%';
+  ce.style.color=avg>=90?'var(--green)':avg>=80?'#d97706':avg>=70?'#c2410c':'var(--red)';
+  document.getElementById('rneedle').style.left=strat.rpos;
+  const rv=document.getElementById('rlbl'); rv.textContent=strat.risk; rv.style.color=strat.rcol;
 
-      // animate bars after paint
-      requestAnimationFrame(() => {
-        document.querySelectorAll('.conf-bar-fill').forEach(bar => {
-          const target = bar.dataset.target;
-          setTimeout(() => { bar.style.width = target + '%'; }, 100);
-        });
-      });
+  let offset=0;
+  strat.stocks.forEach((s,i)=>{
+    const len=CIRC*s.a/100, el=document.getElementById('d'+i);
+    el.style.stroke=SEG_COLORS[i];
+    el.style.strokeDasharray=`${len} ${CIRC-len}`;
+    el.style.strokeDashoffset=-offset; offset+=len;
+  });
 
-      updatePortfolio();
-    }
+  const leg=document.getElementById('dleg'); leg.innerHTML='';
+  strat.stocks.forEach((s,i)=>{
+    leg.innerHTML+=`<div class="drow"><div class="ddot" style="background:${SEG_COLORS[i]}"></div><div class="dtick">${s.t}</div><div class="dtrack"><div class="dfill" style="background:${SEG_COLORS[i]};width:${s.a}%"></div></div><div class="dpct">${s.a}%</div></div>`;
+  });
+}
 
-    function renderStratMeta() {
-      const strat = STRATEGIES[currentStrategy];
-      document.getElementById('strat-desc').textContent = strat.desc;
-      document.getElementById('meta-return').textContent = strat.return + ' proj.';
+document.getElementById('ainput').addEventListener('input',()=>{clearTimeout(window._at);window._at=setTimeout(renderCalc,280);});
 
-      const riskEl = document.getElementById('meta-risk');
-      riskEl.textContent = strat.risk + ' RISK';
-      riskEl.className = 'meta-pill';
-      const riskMap = { 'LOW': 'risk-low', 'MEDIUM': 'risk-med', 'HIGH': 'risk-high', 'VERY HIGH': 'risk-vhigh' };
-      riskEl.classList.add(riskMap[strat.risk] || 'risk-med');
-    }
+// ══════════════════════════════════════
+// TOP TRADERS
+// ══════════════════════════════════════
+function renderTraders(){
+  const g=document.getElementById('trgrid'); g.innerHTML='';
+  const aCls={bull:'bull',bear:'bear',watch:'watch'};
+  const aTxt={bull:'BULLISH',bear:'BEARISH',watch:'WATCHING'};
+  TRADERS.forEach((tr,i)=>{
+    const div=document.createElement('div'); div.className='tc'; div.style.animationDelay=i*60+'ms';
+    div.innerHTML=`
+      <div class="tc-head">
+        <div class="tc-av" style="background:${tr.bg};color:${tr.fg}">${tr.init}</div>
+        <div class="tc-meta"><div class="tc-name">${tr.name}</div><div class="tc-handle">${tr.handle}</div></div>
+        <div class="tc-badge">${tr.badge}</div>
+      </div>
+      <div class="tc-spec">${tr.spec}</div>
+      <div class="tc-stats">
+        <div class="tc-stat"><span class="tc-sv">${tr.follows}</span><span class="tc-sl">FOLLOWERS</span></div>
+        <div class="tc-stat"><span class="tc-sv">${tr.ideas}</span><span class="tc-sl">IDEAS</span></div>
+        <div class="tc-stat"><span class="tc-sv" style="color:var(--green)">${tr.acc}</span><span class="tc-sl">ACCURACY</span></div>
+      </div>
+      <div class="tc-pl">Current Conviction Picks</div>
+      <div class="tc-picks">${tr.picks.map(p=>`<div class="prow"><div class="ptick">${p.t}</div><div class="pname">${p.n}</div><div class="pact ${aCls[p.a]}">${aTxt[p.a]}</div></div>`).join('')}</div>
+      <div class="tc-thesis">${tr.thesis}</div>
+      <div class="tc-foot">
+        <span class="tc-upd">Updated ${tr.updated}</span>
+        <a class="tc-link" href="https://www.tradingview.com/u/${tr.name.replace(/\s/g,'').replace('.','')}" target="_blank">View on TradingView →</a>
+      </div>`;
+    g.appendChild(div);
+  });
+}
 
-    function selectStrategy(key, btn) {
-      currentStrategy = key;
-      document.querySelectorAll('.strat-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      renderStratMeta();
-      renderStocks();
-    }
-
-    document.getElementById('amount-input').addEventListener('input', () => {
-      clearTimeout(animTimeout);
-      animTimeout = setTimeout(() => { renderStocks(); }, 300);
-    });
-
-    // ═══════════════════════════════════════════
-    // PORTFOLIO SUMMARY
-    // ═══════════════════════════════════════════
-    const CIRC = 2 * Math.PI * 36; // circumference ~226.2
-
-    function updatePortfolio() {
-      const strat = STRATEGIES[currentStrategy];
-      const amount = getAmount();
-      const stocks = strat.stocks;
-
-      // update donut total
-      document.getElementById('donut-total').textContent = '$' + amount.toLocaleString('en-US', {maximumFractionDigits:0});
-      document.getElementById('donut-legend').innerHTML = '';
-      document.getElementById('m-invested').textContent = '$' + amount.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
-
-      const projLow  = amount * (1 + strat.returnLow);
-      const projHigh = amount * (1 + strat.returnHigh);
-      const fmt = v => '$' + v.toLocaleString('en-US', {minimumFractionDigits:0,maximumFractionDigits:0});
-      document.getElementById('m-proj').textContent = `${fmt(projLow)}–${fmt(projHigh)}`;
-
-      const gainLow  = amount * strat.returnLow;
-      const gainHigh = amount * strat.returnHigh;
-      document.getElementById('m-gain').textContent = `+${fmt(gainLow)}–${fmt(gainHigh)}`;
-
-      const avgConf = Math.round(stocks.reduce((a,s) => a + s.confidence, 0) / stocks.length);
-      const confEl = document.getElementById('m-conf');
-      confEl.textContent = avgConf + '%';
-      const [, textClass] = confClass(avgConf);
-      confEl.className = 'metric-val ' + textClass.replace('conf-','').replace('-text','');
-      if (avgConf >= 90) confEl.style.color = 'var(--green)';
-      else if (avgConf >= 80) confEl.style.color = '#ffcc02';
-      else if (avgConf >= 70) confEl.style.color = '#ff9800';
-      else confEl.style.color = 'var(--red)';
-
-      // risk needle
-      document.getElementById('risk-needle').style.left = strat.riskPos;
-      document.getElementById('risk-label').textContent = strat.risk;
-      document.getElementById('risk-label').style.color = strat.riskColor;
-
-      // donut segments
-      let offset = 0;
-      stocks.forEach((s, i) => {
-        const len = CIRC * s.alloc / 100;
-        const gap = CIRC - len;
-        const el = document.getElementById('d' + i);
-        if (!el) return;
-        el.style.stroke = SEGMENT_COLORS[i];
-        el.style.strokeDasharray = `${len} ${gap}`;
-        el.style.strokeDashoffset = -offset;
-        offset += len;
-      });
-
-      // legend
-      const legendEl = document.getElementById('donut-legend');
-      let legendHtml = '';
-      stocks.forEach((s, i) => {
-        legendHtml += `<div class="legend-item">
-          <div class="legend-dot" style="background:${SEGMENT_COLORS[i]}"></div>
-          <div class="legend-ticker">${s.ticker}</div>
-          <div class="legend-bar-track">
-            <div class="legend-bar-fill" style="background:${SEGMENT_COLORS[i]};width:${s.alloc}%"></div>
-          </div>
-          <div class="legend-pct">${s.alloc}%</div>
-        </div>`;
-      });
-      legendEl.innerHTML = legendHtml;
-    }
-
-    // ═══════════════════════════════════════════
-    // SCREENER
-    // ═══════════════════════════════════════════
-    function reloadScreener() {
-      const market = document.getElementById('screener-market').value;
-      const screen = document.getElementById('screener-screen').value;
-      const container = document.getElementById('screener-widget');
-      container.innerHTML = '';
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'width:100%;height:100%;';
-      const inner = document.createElement('div');
-      inner.className = 'tradingview-widget-container__widget';
-      inner.style.cssText = 'width:100%;height:100%;';
-      const s = document.createElement('script');
-      s.type = 'text/javascript';
-      s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
-      s.async = true;
-      s.textContent = JSON.stringify({ width:'100%', height:'100%', defaultColumn:'overview', defaultScreen:screen, market, showToolbar:true, colorTheme:'dark', locale:'en', isTransparent:true });
-      wrap.appendChild(inner);
-      wrap.appendChild(s);
-      container.appendChild(wrap);
-    }
-
-    // ═══════════════════════════════════════════
-    // INIT
-    // ═══════════════════════════════════════════
-    renderWL();
-    renderStratMeta();
-    renderStocks();
-    reloadScreener();
-  </script>
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+renderWL();
+loadChart(curSym, curTF);
+reloadSc();
+renderCalc();
+renderTraders();
+</script>
 </body>
 </html>
