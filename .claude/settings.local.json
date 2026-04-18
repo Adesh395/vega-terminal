@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(where gh *)",
+      "Bash(powershell -Command \"where.exe gh\")"
+    ]
+  }
+}
