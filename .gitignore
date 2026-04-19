@@ -2,7 +2,13 @@ node_modules/
 .env
 .DS_Store
 Thumbs.db
-temporary screenshots/
 *.log
-.claude/
-CLAUDE.md
+npm-debug.log*
+
+# Personal Claude Code overrides — never commit these
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Local dev artifacts
+temporary screenshots/
+screenshot.mjs

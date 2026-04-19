@@ -23,8 +23,8 @@
   --sh-amber:0 4px 16px rgba(201,120,12,0.14);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;overflow:hidden}
-body{display:flex;flex-direction:column}
+html{height:100%}
+body{height:100vh;min-height:100vh;min-width:900px;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;overflow:hidden}
 
 /* TICKER */
 #tk{height:40px;flex-shrink:0;background:var(--white);border-bottom:1px solid var(--border);overflow:hidden}
@@ -47,16 +47,42 @@ body{display:flex;flex-direction:column}
 .ndate{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
 
 /* PAGES */
-.pg{display:none;flex:1;min-height:0;flex-direction:column}
+.pg{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden}
 .pg.on{display:flex}
 
 /* ═══ DASHBOARD ═══ */
-.dash-grid{display:grid;grid-template-columns:248px 1fr 276px;flex:1;min-height:0}
-.dcol{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;background:var(--white)}
-.dcol:last-child{border-right:none}
+.dash-grid{display:flex;flex:1;min-height:0;overflow:hidden}
+
+/* Watchlist column */
+.dash-wl{width:228px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--white);overflow:hidden}
+
+/* Main column (chart + movers stacked) */
+.dash-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* Chart area */
+.dash-chart-area{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--cream)}
+
+/* Chart header */
 .chdr{height:38px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--white)}
 .ctitle{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--amber)}
 .cmeta{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* Chart iframe wrapper */
+#chartbox{flex:1;min-height:0;position:relative}
+#chartbox iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:block}
+
+/* Top Movers section */
+.dash-movers{height:226px;flex-shrink:0;border-top:1px solid var(--border);background:var(--white);display:flex;flex-direction:column}
+.movers-hdr{height:38px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--white)}
+.movers-body{flex:1;min-height:0;position:relative}
+.movers-body .tradingview-widget-container{position:absolute;inset:0;width:100%;height:100%}
+.movers-body .tradingview-widget-container__widget{width:100%;height:100%}
+
+/* Timeframe buttons */
+.tfrow{display:flex;gap:2px;margin-left:auto}
+.tfb{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:3px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .1s}
+.tfb:hover{background:var(--off);color:var(--slate)}
+.tfb.on{color:var(--amber);border-color:var(--amber-bd);background:var(--amber-dim)}
 
 /* Watchlist */
 .wls{padding:10px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -78,22 +104,7 @@ body{display:flex;flex-direction:column}
 .wlrow:hover .wld{display:block}
 .wld:hover{color:var(--red)}
 
-/* Chart */
-#chartcol{background:var(--cream);border-right:1px solid var(--border)}
-#chartbox{flex:1;min-height:0}
-#chartbox iframe{width:100%;height:100%;border:none;display:block}
-.tfrow{display:flex;gap:2px;margin-left:auto}
-.tfb{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:3px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .1s}
-.tfb:hover{background:var(--off);color:var(--slate)}
-.tfb.on{color:var(--amber);border-color:var(--amber-bd);background:var(--amber-dim)}
-
-/* Bottom screener */
-.dbottom{height:210px;flex-shrink:0;border-top:1px solid var(--border);background:var(--white);display:flex;flex-direction:column}
-.dbhdr{height:36px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border)}
-#scw{flex:1;min-height:0}
-.sel{background:var(--off);border:1px solid var(--border);color:var(--slate);font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;outline:none;cursor:pointer}
-
-/* ═══ CALCULATOR ═══ */
+/* ═══ NEW IDEAS (formerly Calculator) ═══ */
 #pg-calc{background:var(--cream);overflow-y:auto}
 .calc-wrap{display:grid;grid-template-columns:1fr 330px;min-height:100%}
 .calc-main{padding:28px 30px}
@@ -106,7 +117,7 @@ body{display:flex;flex-direction:column}
 .alrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .albl{font-family:'Syne',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .atag{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-bd);border-radius:10px;padding:2px 10px}
-.ainrow{display:flex;align-items:center;gap:12px}
+.ainrow{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .ainwrap{display:flex;align-items:center;gap:6px;background:var(--off);border:1.5px solid var(--border);border-radius:7px;padding:0 14px;transition:border-color .15s,box-shadow .15s}
 .ainwrap:focus-within{border-color:var(--amber);box-shadow:var(--amber-glow)}
 .asym{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--amber)}
@@ -114,6 +125,13 @@ body{display:flex;flex-direction:column}
 .qbtns{display:flex;gap:6px}
 .qb{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:var(--white);color:var(--slate);cursor:pointer;transition:all .1s}
 .qb:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-dim)}
+
+/* Tech strategy dropdown row */
+.tech-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.tech-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;flex-shrink:0}
+.tech-sel{flex:1;background:var(--off);border:1.5px solid var(--border);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:10px;padding:7px 12px;border-radius:7px;outline:none;cursor:pointer;transition:border-color .15s,box-shadow .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a8a29e'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.tech-sel:focus{border-color:var(--amber);box-shadow:var(--amber-glow)}
+.tech-badge{font-family:'JetBrains Mono',monospace;font-size:8px;padding:2px 8px;border-radius:10px;background:rgba(79,70,229,.08);color:var(--indigo);border:1px solid rgba(79,70,229,.15);white-space:nowrap}
 
 .slbl{font-family:'Syne',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px}
@@ -145,6 +163,23 @@ body{display:flex;flex-direction:column}
 .skamt{text-align:right;flex-shrink:0}
 .skdol{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--ink);display:block}
 .skpct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+
+/* Price / Target / Risk chip row */
+.skprice-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;background:var(--off);border-radius:6px;flex-wrap:wrap}
+.skprice-grp{display:flex;align-items:center;gap:5px}
+.skprice-lbl{font-family:'JetBrains Mono',monospace;font-size:7.5px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase}
+.skprice-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ink)}
+.skprice-arr{color:var(--muted);font-size:11px;margin:0 2px}
+.sktarget-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--green)}
+.skprice-div{width:1px;height:16px;background:var(--border);margin:0 4px}
+.sk-risk-chip{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:600;padding:3px 8px;border-radius:10px;margin-left:auto}
+.sk-risk-low{background:var(--green-dim);color:var(--green);border:1px solid rgba(21,128,61,.2)}
+.sk-risk-med{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-bd)}
+.sk-risk-high{background:rgba(251,146,60,.1);color:#c2410c;border:1px solid rgba(194,65,12,.2)}
+.sk-risk-vhigh{background:var(--red-dim);color:var(--red);border:1px solid rgba(185,28,28,.2)}
+.price-live{font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:600;padding:1px 5px;border-radius:3px;background:var(--green-dim);color:var(--green);border:1px solid rgba(21,128,61,.2);letter-spacing:.06em;margin-left:3px;vertical-align:middle}
+.price-est{font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:600;padding:1px 5px;border-radius:3px;background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-bd);letter-spacing:.06em;margin-left:3px;vertical-align:middle}
+
 .crow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .clbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted);letter-spacing:.08em;width:76px;flex-shrink:0}
 .ctrack{flex:1;height:6px;background:var(--off);border-radius:3px;overflow:hidden}
@@ -234,6 +269,7 @@ body{display:flex;flex-direction:column}
 ::-webkit-scrollbar-thumb{background:rgba(28,25,23,.12);border-radius:2px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(28,25,23,.22)}
 .icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.sel{background:var(--off);border:1px solid var(--border);color:var(--slate);font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:3px;outline:none;cursor:pointer}
 </style>
 </head>
 <body>
@@ -260,8 +296,8 @@ body{display:flex;flex-direction:column}
     Dashboard
   </button>
   <button class="nbtn" onclick="showPage('calc',this)">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="12" y2="12"/><line x1="8" y1="17" x2="10" y2="17"/></svg>
-    Calculator
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    New Ideas
   </button>
   <button class="nbtn" onclick="showPage('traders',this)">
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -280,8 +316,8 @@ body{display:flex;flex-direction:column}
 <div id="pg-dash" class="pg on">
   <div class="dash-grid">
 
-    <!-- Watchlist -->
-    <div class="dcol">
+    <!-- Left: Watchlist -->
+    <div class="dash-wl">
       <div class="chdr">
         <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span class="ctitle">Watchlist</span>
@@ -291,71 +327,54 @@ body{display:flex;flex-direction:column}
       <div id="wll"></div>
     </div>
 
-    <!-- Chart -->
-    <div class="dcol" id="chartcol">
-      <div class="chdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="ctitle" id="chrtlbl">Advanced Chart</span>
-        <div class="tfrow">
-          <button class="tfb" onclick="setTF(this,'1')">1m</button>
-          <button class="tfb" onclick="setTF(this,'5')">5m</button>
-          <button class="tfb" onclick="setTF(this,'15')">15m</button>
-          <button class="tfb" onclick="setTF(this,'60')">1H</button>
-          <button class="tfb" onclick="setTF(this,'240')">4H</button>
-          <button class="tfb on" onclick="setTF(this,'D')">1D</button>
-          <button class="tfb" onclick="setTF(this,'W')">1W</button>
+    <!-- Right: Chart + Movers -->
+    <div class="dash-main">
+
+      <!-- Chart area -->
+      <div class="dash-chart-area">
+        <div class="chdr">
+          <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          <span class="ctitle" id="chrtlbl">SPX — S&amp;P 500</span>
+          <div class="tfrow">
+            <button class="tfb" onclick="setTF(this,'1')">1m</button>
+            <button class="tfb" onclick="setTF(this,'5')">5m</button>
+            <button class="tfb" onclick="setTF(this,'15')">15m</button>
+            <button class="tfb" onclick="setTF(this,'60')">1H</button>
+            <button class="tfb" onclick="setTF(this,'240')">4H</button>
+            <button class="tfb on" onclick="setTF(this,'D')">1D</button>
+            <button class="tfb" onclick="setTF(this,'W')">1W</button>
+          </div>
+        </div>
+        <div id="chartbox"></div>
+      </div>
+
+      <!-- Top Movers section -->
+      <div class="dash-movers">
+        <div class="movers-hdr">
+          <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span class="ctitle">Top Movers — US Markets</span>
+          <span class="cmeta" style="margin-left:8px">Price movement &amp; volume leaders today</span>
+        </div>
+        <div class="movers-body">
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
+            {"colorTheme":"light","dateRange":"1D","exchange":"US","showChart":true,"locale":"en","width":"100%","height":"100%","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":false,"plotLineColorGrowing":"rgba(21,128,61,1)","plotLineColorFalling":"rgba(185,28,28,1)","gridLineColor":"rgba(28,25,23,0.04)","scaleFontColor":"rgba(168,162,158,1)","belowLineFillColorGrowing":"rgba(21,128,61,0.06)","belowLineFillColorFalling":"rgba(185,28,28,0.06)","belowLineFillColorGrowingBottom":"transparent","belowLineFillColorFallingBottom":"transparent","symbolActiveColor":"rgba(201,120,12,0.08)"}
+            </script>
+          </div>
         </div>
       </div>
-      <div id="chartbox"></div>
-    </div>
 
-    <!-- Global Markets -->
-    <div class="dcol" style="border-right:none">
-      <div class="chdr">
-        <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span class="ctitle">Global Markets</span>
-      </div>
-      <div style="flex:1;min-height:0;position:relative">
-        <div class="tradingview-widget-container" style="width:100%;height:100%">
-          <div class="tradingview-widget-container__widget" style="width:100%;height:100%"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-          {"colorTheme":"light","dateRange":"3M","showChart":true,"locale":"en","isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":false,"width":"100%","height":"100%","plotLineColorGrowing":"#15803d","plotLineColorFalling":"#b91c1c","gridLineColor":"rgba(28,25,23,0.05)","scaleFontColor":"#a8a29e","belowLineFillColorGrowing":"rgba(21,128,61,0.04)","belowLineFillColorFalling":"rgba(185,28,28,0.04)","belowLineFillColorGrowingBottom":"transparent","belowLineFillColorFallingBottom":"transparent","symbolActiveColor":"rgba(201,120,12,0.08)","tabs":[{"title":"Indices","symbols":[{"s":"FOREXCOM:SPXUSD","d":"S&P 500"},{"s":"FOREXCOM:NSXUSD","d":"Nasdaq 100"},{"s":"FOREXCOM:DJI","d":"Dow Jones"},{"s":"TVC:VIX","d":"VIX"},{"s":"SPREADEX:DAX","d":"DAX"},{"s":"TVC:NI225","d":"Nikkei"},{"s":"BSE:SENSEX","d":"SENSEX"}],"originalTitle":"Indices"},{"title":"Futures","symbols":[{"s":"CME_MINI:ES1!","d":"S&P Futures"},{"s":"TVC:GOLD","d":"Gold"},{"s":"TVC:OIL","d":"Oil"},{"s":"TVC:SILVER","d":"Silver"}],"originalTitle":"Futures"},{"title":"Crypto","symbols":[{"s":"BINANCE:BTCUSDT","d":"Bitcoin"},{"s":"BINANCE:ETHUSDT","d":"Ethereum"},{"s":"BINANCE:SOLUSDT","d":"Solana"},{"s":"BINANCE:BNBUSDT","d":"BNB"}],"originalTitle":"Crypto"},{"title":"Forex","symbols":[{"s":"FX:EURUSD"},{"s":"FX:GBPUSD"},{"s":"FX:USDJPY"},{"s":"FX:USDCHF"}],"originalTitle":"Forex"}]}
-          </script>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Screener -->
-  <div class="dbottom">
-    <div class="dbhdr">
-      <svg class="icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <span class="ctitle">Stock Screener</span>
-      <div style="margin-left:auto;display:flex;gap:6px">
-        <select class="sel" id="scmkt" onchange="reloadSc()">
-          <option value="america">US Stocks</option>
-          <option value="crypto">Crypto</option>
-          <option value="forex">Forex</option>
-          <option value="futures">Futures</option>
-        </select>
-        <select class="sel" id="scscr" onchange="reloadSc()">
-          <option value="volume_leaders">Top Volume</option>
-          <option value="gainers">Top Gainers</option>
-          <option value="losers">Top Losers</option>
-          <option value="most_capitalized">Largest Cap</option>
-        </select>
-      </div>
-    </div>
-    <div id="scw"></div>
-  </div>
+    </div><!-- end dash-main -->
+  </div><!-- end dash-grid -->
 </div>
 
-<!-- PAGE: CALCULATOR -->
+<!-- PAGE: NEW IDEAS -->
 <div id="pg-calc" class="pg">
   <div class="calc-wrap">
     <div class="calc-main">
-      <div class="pg-title">Investment Calculator</div>
-      <div class="pg-sub">Enter your investment amount and choose a strategy to see AI-curated stock picks with confidence scoring.</div>
+      <div class="pg-title">New Ideas</div>
+      <div class="pg-sub">Enter your investment amount, choose a technical strategy and risk profile to get AI-curated stock picks with confidence scoring.</div>
 
       <div class="acard">
         <div class="alrow">
@@ -374,9 +393,20 @@ body{display:flex;flex-direction:column}
             <button class="qb" onclick="setAmt(10000)">$10K</button>
           </div>
         </div>
+        <div class="tech-row">
+          <span class="tech-lbl">Technical Strategy</span>
+          <select class="tech-sel" id="techStrat" onchange="renderCalc()">
+            <option value="elliott">Elliott Wave Theory</option>
+            <option value="rsi">RSI Divergence</option>
+            <option value="macd">MACD Crossover</option>
+            <option value="bollinger">Bollinger Band Breakout</option>
+            <option value="golden">Golden Cross (MA50 × MA200)</option>
+          </select>
+          <span class="tech-badge" id="techBadge">WAVE 3 UP</span>
+        </div>
       </div>
 
-      <div class="slbl">Choose Strategy</div>
+      <div class="slbl">Choose Risk Profile</div>
       <div class="sgrid" id="sgrid"></div>
 
       <div class="smeta" id="smeta"></div>
@@ -428,47 +458,102 @@ body{display:flex;flex-direction:column}
       <p class="tr-p">Curated insights from the most-followed market analysts on TradingView — their specialties, current conviction picks, and published theses.</p>
       <span class="tr-disc-hero">For educational purposes · Not financial advice · Data is illustrative</span>
     </div>
-
     <div class="tr-grid" id="trgrid"></div>
   </div>
 </div>
 
 <script>
 // ══════════════════════════════════════
+// CONFIG — Add your free Finnhub key for live prices
+// Get one at: https://finnhub.io/register (no credit card)
+// ══════════════════════════════════════
+const VEGA_CONFIG = {
+  finnhubKey: '', // e.g. 'cn1234567890abcdef'
+};
+
+// ══════════════════════════════════════
+// LIVE PRICE ENGINE
+// ══════════════════════════════════════
+const _priceCache = {};
+
+async function fetchLivePrices(symbols) {
+  if (!VEGA_CONFIG.finnhubKey) return;
+  const toFetch = symbols.filter(s => !_priceCache[s]);
+  if (!toFetch.length) return;
+  await Promise.allSettled(toFetch.map(async sym => {
+    try {
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${VEGA_CONFIG.finnhubKey}`);
+      const d = await r.json();
+      if (d && d.c && d.c > 0) _priceCache[sym] = d.c;
+    } catch {}
+  }));
+}
+
+function livePrice(sym) { return _priceCache[sym] || null; }
+
+// ══════════════════════════════════════
 // DATA
 // ══════════════════════════════════════
+const TECH_STRATS = {
+  elliott: {label:'Elliott Wave Theory',badge:'WAVE 3 UP',desc:'Elliott Wave impulse count identifies stocks in wave 3 acceleration — highest momentum phase of the cycle.'},
+  rsi:     {label:'RSI Divergence',badge:'BULLISH DIV',desc:'RSI bullish divergence signals where price made lower lows but momentum made higher lows — reversal setups.'},
+  macd:    {label:'MACD Crossover',badge:'MACD BUY',desc:'MACD signal line crossovers on the weekly chart confirming trend initiation with histogram expansion.'},
+  bollinger:{label:'Bollinger Band Breakout',badge:'BB BREAKOUT',desc:'Stocks breaking above upper Bollinger Band after a squeeze — volatility expansion in progress.'},
+  golden:  {label:'Golden Cross (MA50 × MA200)',badge:'GOLDEN X',desc:'50-day SMA crossed above 200-day SMA confirming long-term uptrend resumption with institutional backing.'},
+};
+
 const STRATEGIES = {
   conservative:{label:'Conservative',desc:'Low volatility blue chips with decades of proven stability',ret:'8–12%',rlo:.08,rhi:.12,risk:'LOW',rpos:'10%',rcol:'var(--green)',
     stocks:[
-      {t:'MSFT',n:'Microsoft Corp',sec:'Technology',a:25,conf:91,trend:'+18.2%',reason:'Dominant cloud market share with Azure growing 31% YoY. M365 Copilot integration and 60%+ gross margins create a near-unassailable competitive moat.'},
-      {t:'AAPL',n:'Apple Inc',sec:'Consumer Tech',a:20,conf:87,trend:'+12.4%',reason:'Services segment (App Store, iCloud, TV+) now 25% of revenue and growing 14% YoY, insulating the business from hardware cycle volatility.'},
-      {t:'JNJ',n:'Johnson & Johnson',sec:'Healthcare',a:20,conf:83,trend:'+9.1%',reason:'62 consecutive years of dividend increases. Post-Kenvue spinoff the company is a focused pharma play with a deep pipeline and fortress balance sheet.'},
-      {t:'PG',n:'Procter & Gamble',sec:'Consumer Staples',a:20,conf:85,trend:'+7.8%',reason:'Pricing power across 65+ billion-dollar brands. Volume recovery visible as pricing laps. Dividend aristocrat for 67 straight years.'},
-      {t:'KO',n:'Coca-Cola',sec:'Beverages',a:15,conf:80,trend:'+6.5%',reason:"200+ country distribution and irreplaceable brand. Buffett's 30-year core holding. 3.1% dividend yield provides income floor."},
+      {t:'MSFT',n:'Microsoft Corp',sec:'Technology',a:25,conf:91,trend:'+18.2%',price:382.50,target:450,stockRisk:'LOW',
+       reason:'Dominant cloud market share with Azure growing 31% YoY. M365 Copilot integration and 60%+ gross margins create a near-unassailable competitive moat.'},
+      {t:'AAPL',n:'Apple Inc',sec:'Consumer Tech',a:20,conf:87,trend:'+12.4%',price:186.20,target:225,stockRisk:'LOW',
+       reason:'Services segment (App Store, iCloud, TV+) now 25% of revenue and growing 14% YoY, insulating the business from hardware cycle volatility.'},
+      {t:'JNJ',n:'Johnson & Johnson',sec:'Healthcare',a:20,conf:83,trend:'+9.1%',price:148.40,target:168,stockRisk:'LOW',
+       reason:'62 consecutive years of dividend increases. Post-Kenvue spinoff the company is a focused pharma play with a deep pipeline and fortress balance sheet.'},
+      {t:'PG',n:'Procter & Gamble',sec:'Consumer Staples',a:20,conf:85,trend:'+7.8%',price:160.80,target:178,stockRisk:'LOW',
+       reason:'Pricing power across 65+ billion-dollar brands. Volume recovery visible as pricing laps. Dividend aristocrat for 67 straight years.'},
+      {t:'KO',n:'Coca-Cola',sec:'Beverages',a:15,conf:80,trend:'+6.5%',price:62.40,target:70,stockRisk:'LOW',
+       reason:"200+ country distribution and irreplaceable brand. Buffett's 30-year core holding. 3.1% dividend yield provides income floor."},
     ]},
   balanced:{label:'Balanced',desc:'Growth conviction blended with income stability and diversification',ret:'14–20%',rlo:.14,rhi:.20,risk:'MEDIUM',rpos:'38%',rcol:'#d97706',
     stocks:[
-      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:25,conf:94,trend:'+142%',reason:'AI infrastructure backbone with 80%+ datacenter GPU market share. Blackwell demand backlog extends through 2026. CUDA creates a 15-year software moat.'},
-      {t:'MSFT',n:'Microsoft Corp',sec:'Technology',a:20,conf:91,trend:'+18.2%',reason:'Azure cloud re-accelerating with AI workloads. OpenAI partnership differentiates across enterprise. GitHub Copilot at 1.3M paid subscribers and growing.'},
-      {t:'AMZN',n:'Amazon.com',sec:'Cloud / E-Commerce',a:20,conf:88,trend:'+22.5%',reason:'AWS at 31% market share, re-accelerating to 17% growth. Advertising division growing 27% YoY — the most underappreciated margin engine in tech.'},
-      {t:'JPM',n:'JPMorgan Chase',sec:'Financial Services',a:20,conf:84,trend:'+14.3%',reason:"Best-in-class bank, $35B+ annual earnings, fortress balance sheet. Benefits from higher-for-longer rates. Dimon's capital allocation track record is unmatched."},
-      {t:'META',n:'Meta Platforms',sec:'Social Media / AI',a:15,conf:86,trend:'+35.7%',reason:'3.27B daily active users. AI-driven ad targeting delivering record pricing. Llama open-source strategy building durable enterprise goodwill.'},
+      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:25,conf:94,trend:'+142%',price:876.40,target:1150,stockRisk:'HIGH',
+       reason:'AI infrastructure backbone with 80%+ datacenter GPU market share. Blackwell demand backlog extends through 2026. CUDA creates a 15-year software moat.'},
+      {t:'MSFT',n:'Microsoft Corp',sec:'Technology',a:20,conf:91,trend:'+18.2%',price:382.50,target:452,stockRisk:'LOW',
+       reason:'Azure cloud re-accelerating with AI workloads. OpenAI partnership differentiates across enterprise. GitHub Copilot at 1.3M paid subscribers and growing.'},
+      {t:'AMZN',n:'Amazon.com',sec:'Cloud / E-Commerce',a:20,conf:88,trend:'+22.5%',price:188.60,target:228,stockRisk:'MEDIUM',
+       reason:'AWS at 31% market share, re-accelerating to 17% growth. Advertising division growing 27% YoY — the most underappreciated margin engine in tech.'},
+      {t:'JPM',n:'JPMorgan Chase',sec:'Financial Services',a:20,conf:84,trend:'+14.3%',price:226.80,target:258,stockRisk:'MEDIUM',
+       reason:"Best-in-class bank, $35B+ annual earnings, fortress balance sheet. Benefits from higher-for-longer rates. Dimon's capital allocation track record is unmatched."},
+      {t:'META',n:'Meta Platforms',sec:'Social Media / AI',a:15,conf:86,trend:'+35.7%',price:548.20,target:680,stockRisk:'MEDIUM',
+       reason:'3.27B daily active users. AI-driven ad targeting delivering record pricing. Llama open-source strategy building durable enterprise goodwill.'},
     ]},
   growth:{label:'Growth',desc:'High-conviction technology and innovation plays for maximum appreciation',ret:'25–45%',rlo:.25,rhi:.45,risk:'HIGH',rpos:'65%',rcol:'#c2410c',
     stocks:[
-      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:30,conf:94,trend:'+142%',reason:'Generational semiconductor cycle. Every AI lab, hyperscaler, and sovereign AI initiative requires Blackwell GPUs. Structural monopoly on AI compute with no credible challenger until 2027+.'},
-      {t:'META',n:'Meta Platforms',sec:'Social Media / AI',a:25,conf:89,trend:'+35.7%',reason:"Year of Efficiency delivered 70% EPS growth. WhatsApp monetization barely started. At 24x forward PE it's at its historically cheapest valuation ever."},
-      {t:'AMZN',n:'Amazon.com',sec:'Cloud / E-Commerce',a:20,conf:87,trend:'+22.5%',reason:'Trainium2 AI chips reduce NVIDIA dependency. Operating margin expanding 400bps YoY as fulfillment network achieves structural efficiency.'},
-      {t:'GOOGL',n:'Alphabet Inc',sec:'Technology / AI',a:15,conf:85,trend:'+16.8%',reason:'Search monopoly intact. YouTube ad revenue +16% YoY. Google Cloud growing 28% approaching profitability. DeepMind and Waymo deeply undervalued as embedded options.'},
-      {t:'TSLA',n:'Tesla Inc',sec:'EV / Robotics / AI',a:10,conf:68,trend:'+28.4%',reason:'FSD autonomy progress accelerating. Optimus humanoid in limited production. Energy storage growing 67% YoY. High execution risk but asymmetric upside.'},
+      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:30,conf:94,trend:'+142%',price:876.40,target:1200,stockRisk:'HIGH',
+       reason:'Generational semiconductor cycle. Every AI lab, hyperscaler, and sovereign AI initiative requires Blackwell GPUs. Structural monopoly on AI compute with no credible challenger until 2027+.'},
+      {t:'META',n:'Meta Platforms',sec:'Social Media / AI',a:25,conf:89,trend:'+35.7%',price:548.20,target:700,stockRisk:'MEDIUM',
+       reason:"Year of Efficiency delivered 70% EPS growth. WhatsApp monetization barely started. At 24x forward PE it's at its historically cheapest valuation ever."},
+      {t:'AMZN',n:'Amazon.com',sec:'Cloud / E-Commerce',a:20,conf:87,trend:'+22.5%',price:188.60,target:238,stockRisk:'MEDIUM',
+       reason:'Trainium2 AI chips reduce NVIDIA dependency. Operating margin expanding 400bps YoY as fulfillment network achieves structural efficiency.'},
+      {t:'GOOGL',n:'Alphabet Inc',sec:'Technology / AI',a:15,conf:85,trend:'+16.8%',price:168.20,target:205,stockRisk:'MEDIUM',
+       reason:'Search monopoly intact. YouTube ad revenue +16% YoY. Google Cloud growing 28% approaching profitability. DeepMind and Waymo deeply undervalued as embedded options.'},
+      {t:'TSLA',n:'Tesla Inc',sec:'EV / Robotics / AI',a:10,conf:68,trend:'+28.4%',price:232.40,target:320,stockRisk:'HIGH',
+       reason:'FSD autonomy progress accelerating. Optimus humanoid in limited production. Energy storage growing 67% YoY. High execution risk but asymmetric upside.'},
     ]},
   aggressive:{label:'Aggressive',desc:'Maximum upside potential with elevated risk — conviction investors only',ret:'40–80%',rlo:.40,rhi:.80,risk:'VERY HIGH',rpos:'88%',rcol:'var(--red)',
     stocks:[
-      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:25,conf:93,trend:'+142%',reason:'AI arms race has years to run. Blackwell backlog through 2027. NIM software and inference business layering high-margin revenue on top of the hardware monopoly.'},
-      {t:'PLTR',n:'Palantir Technologies',sec:'AI / Defense',a:20,conf:78,trend:'+82%',reason:'AIP platform winning major US gov and enterprise AI deals. US commercial revenue growing 55% YoY. S&P 500 inclusion expanded institutional ownership.'},
-      {t:'ARM',n:'Arm Holdings',sec:'Semiconductors',a:20,conf:76,trend:'+64%',reason:'Royalty on every mobile chip worldwide. AI edge computing transition accelerates ASP expansion. 99% of smartphones globally run ARM architecture.'},
-      {t:'TSLA',n:'Tesla Inc',sec:'EV / Robotics / AI',a:20,conf:67,trend:'+28.4%',reason:'Robotaxi network launch + Optimus production could entirely reshape the valuation multiple. Binary outcome — massive upside if autonomous vision executes.'},
-      {t:'SMCI',n:'Super Micro Computer',sec:'AI Infrastructure',a:15,conf:63,trend:'+41%',reason:'AI server infrastructure at ~80% revenue growth. Accounting issues resolved. Direct GPU rack integration creates sticky enterprise relationships.'},
+      {t:'NVDA',n:'NVIDIA Corporation',sec:'Semiconductors',a:25,conf:93,trend:'+142%',price:876.40,target:1250,stockRisk:'HIGH',
+       reason:'AI arms race has years to run. Blackwell backlog through 2027. NIM software and inference business layering high-margin revenue on top of the hardware monopoly.'},
+      {t:'PLTR',n:'Palantir Technologies',sec:'AI / Defense',a:20,conf:78,trend:'+82%',price:28.60,target:48,stockRisk:'VERY HIGH',
+       reason:'AIP platform winning major US gov and enterprise AI deals. US commercial revenue growing 55% YoY. S&P 500 inclusion expanded institutional ownership.'},
+      {t:'ARM',n:'Arm Holdings',sec:'Semiconductors',a:20,conf:76,trend:'+64%',price:112.80,target:168,stockRisk:'HIGH',
+       reason:'Royalty on every mobile chip worldwide. AI edge computing transition accelerates ASP expansion. 99% of smartphones globally run ARM architecture.'},
+      {t:'TSLA',n:'Tesla Inc',sec:'EV / Robotics / AI',a:20,conf:67,trend:'+28.4%',price:232.40,target:380,stockRisk:'VERY HIGH',
+       reason:'Robotaxi network launch + Optimus production could entirely reshape the valuation multiple. Binary outcome — massive upside if autonomous vision executes.'},
+      {t:'SMCI',n:'Super Micro Computer',sec:'AI Infrastructure',a:15,conf:63,trend:'+41%',price:44.20,target:78,stockRisk:'VERY HIGH',
+       reason:'AI server infrastructure at ~80% revenue growth. Accounting issues resolved. Direct GPU rack integration creates sticky enterprise relationships.'},
     ]},
 };
 
@@ -512,7 +597,7 @@ const TRADERS = [
 // STATE
 // ══════════════════════════════════════
 let curStrat = 'conservative';
-let curSym = 'FOREXCOM:SPXUSD', curTF = 'D', curLabel = 'SPX';
+let curSym = 'FOREXCOM:SPXUSD', curTF = 'D', curLabel = 'SPX — S&P 500';
 
 const DEFAULT_WL = [
   {s:'FOREXCOM:SPXUSD',d:'SPX',n:'S&P 500',t:'i'},{s:'FOREXCOM:NSXUSD',d:'NDX',n:'Nasdaq 100',t:'i'},
@@ -566,7 +651,7 @@ function renderWL(filter=''){
     if(!rows.length) continue;
     if(!f) h+=`<div class="catlbl">${CAT[cat]}</div>`;
     for(const w of rows){
-      h+=`<div class="wlrow" onclick="selSym('${w.s}','${w.d}')">
+      h+=`<div class="wlrow" onclick="selSym('${w.s}','${w.d}','${w.n}')">
         <div class="wlt">${w.d}</div><div class="wln">${w.n}</div>
         <div class="wlb ${BCLS[w.t]}">${BTXT[w.t]}</div>
         <div class="wld" onclick="delSym(event,'${w.s}')">×</div>
@@ -594,27 +679,18 @@ wlinput.addEventListener('keydown',e=>{
 // ══════════════════════════════════════
 function loadChart(sym,tf){
   const p=new URLSearchParams({symbol:sym,interval:tf,theme:'light',style:'1',locale:'en',timezone:'Etc/UTC',toolbar_bg:'fafaf8',enable_publishing:'false',hide_top_toolbar:'false',hide_legend:'false',save_image:'false',container_id:'vega_chart',withdateranges:'1',allow_symbol_change:'1',details:'1',hide_side_toolbar:'0'});
-  document.getElementById('chartbox').innerHTML=`<iframe src="https://www.tradingview.com/widgetembed/?${p}" allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen style="width:100%;height:100%;border:none;display:block"></iframe>`;
+  document.getElementById('chartbox').innerHTML=`<iframe src="https://www.tradingview.com/widgetembed/?${p}" allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen></iframe>`;
 }
-function selSym(sym,lbl){curSym=sym;curLabel=lbl;document.getElementById('chrtlbl').textContent=lbl;loadChart(sym,curTF);renderWL(wlinput.value);}
+function selSym(sym,lbl,fullName){
+  curSym=sym; curLabel=lbl+(fullName?' — '+fullName:'');
+  document.getElementById('chrtlbl').textContent=curLabel;
+  loadChart(sym,curTF);
+  renderWL(wlinput.value);
+}
 function setTF(btn,tf){curTF=tf;document.querySelectorAll('.tfb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadChart(curSym,tf);}
 
 // ══════════════════════════════════════
-// SCREENER
-// ══════════════════════════════════════
-function reloadSc(){
-  const mkt=document.getElementById('scmkt').value,scr=document.getElementById('scscr').value;
-  const c=document.getElementById('scw'); c.innerHTML='';
-  const w=document.createElement('div'); w.style.cssText='width:100%;height:100%';
-  const i=document.createElement('div'); i.className='tradingview-widget-container__widget'; i.style.cssText='width:100%;height:100%';
-  const s=document.createElement('script'); s.type='text/javascript';
-  s.src='https://s3.tradingview.com/external-embedding/embed-widget-screener.js'; s.async=true;
-  s.textContent=JSON.stringify({width:'100%',height:'100%',defaultColumn:'overview',defaultScreen:scr,market:mkt,showToolbar:true,colorTheme:'light',locale:'en',isTransparent:true});
-  w.appendChild(i); w.appendChild(s); c.appendChild(w);
-}
-
-// ══════════════════════════════════════
-// CALCULATOR
+// NEW IDEAS (Calculator)
 // ══════════════════════════════════════
 function getAmt(){return Math.max(100,parseFloat(document.getElementById('ainput').value)||1000);}
 function setAmt(v){document.getElementById('ainput').value=v;renderCalc();}
@@ -624,6 +700,13 @@ function confCls(c){
   if(c>=80) return['f-b','t-b'];
   if(c>=70) return['f-c','t-c'];
   return['f-d','t-d'];
+}
+
+function stockRiskCls(r){
+  if(r==='LOW') return 'sk-risk-low';
+  if(r==='MEDIUM') return 'sk-risk-med';
+  if(r==='HIGH') return 'sk-risk-high';
+  return 'sk-risk-vhigh';
 }
 
 function renderStratCards(){
@@ -638,23 +721,52 @@ function renderStratCards(){
   }
 }
 
-function renderCalc(){
+async function renderCalc(){
+  // Update tech badge
+  const ts = TECH_STRATS[document.getElementById('techStrat').value];
+  document.getElementById('techBadge').textContent = ts.badge;
+
   renderStratCards();
   const strat=STRATEGIES[curStrat], amt=getAmt();
+
+  // Fetch live prices for current strategy stocks (no-op if no API key)
+  await fetchLivePrices(strat.stocks.map(s=>s.t));
   const riskCls={LOW:'p-lo',MEDIUM:'p-me',HIGH:'p-hi','VERY HIGH':'p-vh'};
-  document.getElementById('smeta').innerHTML=`<span class="smeta-d">${strat.desc}</span><span class="pill p-ret">${strat.ret} proj.</span><span class="pill ${riskCls[strat.risk]}">${strat.risk} RISK</span>`;
+  document.getElementById('smeta').innerHTML=`<span class="smeta-d">${strat.desc} · <em style="font-style:normal;color:var(--indigo)">${ts.label}</em></span><span class="pill p-ret">${strat.ret} proj.</span><span class="pill ${riskCls[strat.risk]}">${strat.risk} RISK</span>`;
 
   const list=document.getElementById('slist'); list.innerHTML='';
   strat.stocks.forEach((s,i)=>{
     const allocAmt=(amt*s.a/100);
     const projAmt=(allocAmt*(1+parseFloat(s.trend)/100));
     const [fc,tc]=confCls(s.conf);
+    const rCls=stockRiskCls(s.stockRisk);
+    const live=livePrice(s.t);
+    const displayPrice=live||s.price;
+    const upside=Math.round((s.target/displayPrice-1)*100);
+    const priceBadge=live?'<span class="price-live">LIVE</span>':'<span class="price-est">EST.</span>';
     const card=document.createElement('div'); card.className='stkcard'; card.style.animationDelay=i*55+'ms';
     card.innerHTML=`
       <div class="sk1">
         <div class="skbadge">${s.t}</div>
         <div class="skinfo"><div class="skname">${s.n}</div><div class="sksec">${s.sec}</div></div>
         <div class="skamt"><span class="skdol">$${allocAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="skpct">${s.a}% of portfolio</span></div>
+      </div>
+      <div class="skprice-row">
+        <div class="skprice-grp">
+          <span class="skprice-lbl">Current</span>
+          <span class="skprice-val">$${displayPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}${priceBadge}</span>
+        </div>
+        <span class="skprice-arr">→</span>
+        <div class="skprice-grp">
+          <span class="skprice-lbl">Target</span>
+          <span class="sktarget-val">$${s.target.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+        </div>
+        <div class="skprice-div"></div>
+        <div class="skprice-grp">
+          <span class="skprice-lbl">Upside</span>
+          <span class="sktarget-val">${upside>0?'+':''}${upside}%</span>
+        </div>
+        <span class="sk-risk-chip ${rCls}">${s.stockRisk} RISK</span>
       </div>
       <div class="crow">
         <span class="clbl">CONFIDENCE</span>
@@ -700,7 +812,7 @@ function renderPortfolio(){
   });
 }
 
-document.getElementById('ainput').addEventListener('input',()=>{clearTimeout(window._at);window._at=setTimeout(renderCalc,280);});
+document.getElementById('ainput').addEventListener('input',()=>{clearTimeout(window._at);window._at=setTimeout(()=>renderCalc(),280);});
 
 // ══════════════════════════════════════
 // TOP TRADERS
@@ -739,7 +851,6 @@ function renderTraders(){
 // ══════════════════════════════════════
 renderWL();
 loadChart(curSym, curTF);
-reloadSc();
 renderCalc();
 renderTraders();
 </script>
